@@ -1,6 +1,6 @@
 # NarutoOverlay
 
-Keep an eye on Minecraft performance without covering your screen in debug text. NarutoOverlay brings useful stats into a compact, customizable HUD, with each overlay card arranged and tuned to your play style.
+Keep an eye on Minecraft performance without covering your screen in debug text. NarutoOverlay brings useful stats into a compact, highly customizable HUD, with each overlay card arranged and tuned to your play style.
 
 ## Features
 
@@ -15,6 +15,6 @@ To fit the needs of most players in everyday play, NarutoOverlay defaults to ren
 
 ## Controls
 
-Open the chat, then **left-click and drag** a card to move it. **Right-click** a card to open its settings. You can also bind **Reset Text Positions** in the Controls menu.
+Open the chat, then **left-click and drag** a card to move it. **Right-click** any card to open the settings. You can also bind **Reset Text Positions** in the Controls menu.
 
-The immersive in-game configuration screen requires **ModernUI**. It is optional; the overlay itself works without it.
+The immersive in-game configuration screen requires **[ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui)**. It is optional; the cards themselves work without it.
