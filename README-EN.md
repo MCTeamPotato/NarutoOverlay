@@ -12,22 +12,6 @@ The configuration screen is built on [ModernUI](https://www.curseforge.com/minec
 
 ---
 
-## Table of contents
-
-- [Features](#features)
-- [Installation](#installation)
-- [Quick start](#quick-start)
-- [Controls](#controls)
-- [Configuration screen](#configuration-screen)
-- [Background and slideshow](#background-and-slideshow)
-- [Text shimmer](#text-shimmer)
-- [Advanced configuration](#advanced-configuration)
-- [Performance](#performance)
-- [FAQ](#faq)
-- [License and credits](#license-and-credits)
-
----
-
 ## Features
 
 ### HUD cards
