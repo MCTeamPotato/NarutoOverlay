@@ -4,6 +4,7 @@ import me.kall.narutooverlay.card.CardRegistry;
 import me.kall.narutooverlay.config.ConfigVersion;
 import me.kall.narutooverlay.config.RenderArgs;
 import me.kall.narutooverlay.config.ui.ConfigUi;
+import me.kall.narutooverlay.config.ui.background.BundledBackgrounds;
 import me.kall.narutooverlay.event.TextRelocation;
 import me.kall.narutooverlay.event.api.TaskRegistryEvent;
 import me.kall.narutooverlay.event.fps.FpsTracker;
@@ -67,6 +68,8 @@ public final class NarutoOverlay {
         @SubscribeEvent(priority = EventPriority.LOWEST)
         public static void setup(@NotNull FMLClientSetupEvent event) {
             event.enqueueWork(() -> {
+                BundledBackgrounds.install();
+
                 if (ModList.get().isLoaded("modernui")) {
                     ConfigUi.migrateBundledDefaults();
                 }

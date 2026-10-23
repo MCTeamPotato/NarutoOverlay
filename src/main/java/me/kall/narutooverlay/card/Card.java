@@ -10,6 +10,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraftforge.common.ForgeConfigSpec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -236,7 +237,7 @@ public abstract class Card<D> {
         return this.order;
     }
 
-    public final @NotNull List<Field<D>> allFields() {
+    public final @NotNull @Unmodifiable List<Field<D>> allFields() {
         return List.copyOf(this.fields.values());
     }
 
