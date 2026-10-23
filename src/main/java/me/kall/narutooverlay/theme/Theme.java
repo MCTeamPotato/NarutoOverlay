@@ -4,15 +4,15 @@ import org.jetbrains.annotations.NotNull;
 
 public enum Theme {
     NARUTO(new Palette(
-            0xE8934A,
-            0xB07A45,
-            0x6E5A48,
+            0xFF8F2A,
+            0xE0A64A,
+            0xA03A26,
             0xFFFFFF,
-            0xFFD400,
-            0xFF3B5C,
-            0xB01B1C21,
-            0xCCFF8A1F,
-            0xFFFFD400
+            0xFFD64A,
+            0xFF4A38,
+            0xB01E0A08,
+            0xCCE33A26,
+            0xFFFFC42E
     )),
 
     CLASSIC(new Palette(

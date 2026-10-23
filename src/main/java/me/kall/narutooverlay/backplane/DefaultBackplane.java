@@ -26,7 +26,7 @@ public class DefaultBackplane extends AbstractBackplane {
         graphics.fill(left + 1, top + 1, right - 1, top + 2, TOP_HIGHLIGHT);
 
         if (card.accent()) {
-            graphics.fill(card.accentLeft(), top + 1, card.accentRight(), bottom - 1, palette.accent());
+            graphics.fillGradient(card.accentLeft(), top + 1, card.accentRight(), bottom - 1, palette.accent() | 0xFF000000, RenderArgs.borderColor() | 0xFF000000);
         }
 
         int border = RenderArgs.borderColor();

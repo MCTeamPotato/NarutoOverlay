@@ -8,8 +8,8 @@ import org.jetbrains.annotations.NotNull;
 public abstract class AbstractBackplane {
     public static final int PADDING_X = 4;
     public static final int PADDING_RIGHT = 3;
-    public static final int PADDING_TOP = 3;
-    public static final int PADDING_BOTTOM = 1;
+    public static final int PADDING_TOP = 2;
+    public static final int PADDING_BOTTOM = 2;
     public static final int ACCENT_WIDTH = 2;
 
     public final void render(@NotNull GuiGraphics graphics, int left, int top, int width, int height, int @NotNull [] dividers) {

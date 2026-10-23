@@ -1,5 +1,6 @@
-package me.kall.narutooverlay.config.ui;
+package me.kall.narutooverlay.config.ui.page;
 
+import me.kall.narutooverlay.config.ui.widget.UiKit;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorListener;
 import icyllis.modernui.animation.MotionEasingUtils;

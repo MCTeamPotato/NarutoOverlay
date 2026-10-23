@@ -1,4 +1,4 @@
-package me.kall.narutooverlay.config.ui;
+package me.kall.narutooverlay.config.ui.widget;
 
 import icyllis.modernui.mc.MuiModApi;
 import net.minecraft.client.Minecraft;
@@ -14,8 +14,11 @@ import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import java.awt.FileDialog;
 import java.awt.Frame;
 import java.awt.GraphicsEnvironment;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
+import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
 
 public final class ImagePicker {
     private static final Logger LOGGER = LogManager.getLogger("NarutoOverlay");
@@ -58,6 +61,72 @@ public final class ImagePicker {
             openAwtDialog(callback);
         }
 
+    }
+
+    public static void openFolder(@NotNull Callback callback) {
+        openFolder(null, callback);
+    }
+
+    public static void openFolder(@Nullable Path initial, @NotNull Callback callback) {
+        LOGGER.info("Opening the background folder picker");
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.isSameThread()) {
+            runFolder(initial, callback);
+        } else {
+            minecraft.execute(() -> runFolder(initial, callback));
+        }
+    }
+
+    private static void runFolder(@Nullable Path initial, @NotNull Callback callback) {
+        String picked;
+        try {
+            picked = openNativeFolderDialog(initial);
+        } catch (Throwable error) {
+            LOGGER.warn("Could not open the native folder dialog, falling back to Swing", error);
+            openSwingFolderDialog(callback);
+            return;
+        }
+
+        if (picked == null || picked.isEmpty()) return;
+        try {
+            Path path = Path.of(picked);
+            MuiModApi.postToUiThread(() -> callback.onPicked(path));
+        } catch (RuntimeException error) {
+            LOGGER.error("Invalid folder selected: {}", picked, error);
+            MuiModApi.postToUiThread(callback::onFailed);
+        }
+    }
+
+    private static @Nullable String openNativeFolderDialog(@Nullable Path initial) {
+        // LWJGL uses the null-unsafe nUTF8() for this parameter, so it must never be null.
+        String defaultPath = initial != null && Files.isDirectory(initial)
+                ? initial.toString()
+                : Minecraft.getInstance().gameDirectory.getAbsolutePath();
+        return TinyFileDialogs.tinyfd_selectFolderDialog(
+                I18n.get("narutooverlay.config.background.folder.picker"), defaultPath);
+    }
+
+    private static void openSwingFolderDialog(@NotNull Callback callback) {
+        if (GraphicsEnvironment.isHeadless()) {
+            LOGGER.warn("Cannot open the folder picker: AWT is headless");
+            MuiModApi.postToUiThread(callback::onFailed);
+            return;
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            try {
+                JFileChooser chooser = new JFileChooser();
+                chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                chooser.setDialogTitle(I18n.get("narutooverlay.config.background.folder.picker"));
+                if (chooser.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) return;
+
+                Path path = chooser.getSelectedFile().toPath();
+                MuiModApi.postToUiThread(() -> callback.onPicked(path));
+            } catch (Throwable error) {
+                LOGGER.error("Could not open the folder picker", error);
+                MuiModApi.postToUiThread(callback::onFailed);
+            }
+        });
     }
 
     private static @Nullable String openNativeDialog() {

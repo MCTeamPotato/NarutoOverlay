@@ -1,4 +1,4 @@
-package me.kall.narutooverlay.config.ui;
+package me.kall.narutooverlay.config.ui.widget;
 
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;

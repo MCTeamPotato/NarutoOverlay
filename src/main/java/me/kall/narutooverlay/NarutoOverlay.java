@@ -67,6 +67,10 @@ public final class NarutoOverlay {
         @SubscribeEvent(priority = EventPriority.LOWEST)
         public static void setup(@NotNull FMLClientSetupEvent event) {
             event.enqueueWork(() -> {
+                if (ModList.get().isLoaded("modernui")) {
+                    ConfigUi.migrateBundledDefaults();
+                }
+
                 IEventBus bus = MinecraftForge.EVENT_BUS;
 
                 bus.addListener(CardRegistry::render);

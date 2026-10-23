@@ -27,6 +27,21 @@ import icyllis.modernui.widget.TextView;
 import icyllis.modernui.widget.Toast;
 import me.kall.narutooverlay.config.ConfigSaver;
 import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.config.ui.background.BackgroundSlideshow;
+import me.kall.narutooverlay.config.ui.background.ConfigBackground;
+import me.kall.narutooverlay.config.ui.background.ImageBackgroundDrawable;
+import me.kall.narutooverlay.config.ui.page.AboutPage;
+import me.kall.narutooverlay.config.ui.page.AppearancePage;
+import me.kall.narutooverlay.config.ui.page.CardsPage;
+import me.kall.narutooverlay.config.ui.page.Page;
+import me.kall.narutooverlay.config.ui.widget.Accent;
+import me.kall.narutooverlay.config.ui.widget.CropOverlay;
+import me.kall.narutooverlay.config.ui.widget.ImagePicker;
+import me.kall.narutooverlay.config.ui.widget.ShimmerCircleDrawable;
+import me.kall.narutooverlay.config.ui.widget.ShimmerHintDrawable;
+import me.kall.narutooverlay.config.ui.widget.ShimmerTextView;
+import me.kall.narutooverlay.config.ui.widget.TextShimmer;
+import me.kall.narutooverlay.config.ui.widget.UiKit;
 import net.minecraft.client.Minecraft;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,7 +80,10 @@ public final class ConfigFragment extends Fragment implements MuiModApi.OnWindow
     private @Nullable FrameLayout content;
     private @Nullable LinearLayout rail;
     private @Nullable TextView logo;
+    private @Nullable ShimmerCircleDrawable logoCircle;
     private @Nullable TextView hintView;
+    private @Nullable ShimmerHintDrawable hintBox;
+    private @Nullable BackgroundSlideshow slideshow;
     private @Nullable String initialCard;
     private @Nullable ValueAnimator pageAnimator;
     private @Nullable ValueAnimator themeAnimator;
@@ -144,6 +162,45 @@ public final class ConfigFragment extends Fragment implements MuiModApi.OnWindow
     }
 
     @Override
+    public void chooseBackgroundFolder() {
+        ImagePicker.openFolder(ConfigBackground.folder(), new ImagePicker.Callback() {
+            @Override
+            public void onPicked(@NotNull Path path) {
+                RenderArgs.BACKGROUND_FOLDER.set(ConfigBackground.store(path));
+                ConfigSaver.changed();
+                refreshBackground();
+                rebuildPage();
+            }
+
+            @Override
+            public void onFailed() {
+                toast(UiKit.str("narutooverlay.config.background.folder.failed"));
+            }
+        });
+    }
+
+    @Override
+    public void clearBackgroundFolder() {
+        RenderArgs.BACKGROUND_FOLDER.set("");
+        ConfigSaver.changed();
+        refreshBackground();
+        rebuildPage();
+    }
+
+    @Override
+    public void setBackgroundInterval(double seconds) {
+        RenderArgs.BACKGROUND_INTERVAL.set(seconds);
+        ConfigSaver.changed();
+        if (this.slideshow != null) this.slideshow.reschedule();
+    }
+
+    @Override
+    public void setBackgroundFade(double seconds) {
+        RenderArgs.BACKGROUND_FADE.set(seconds);
+        ConfigSaver.changed();
+    }
+
+    @Override
     public void clearBackgroundImage() {
         RenderArgs.BACKGROUND_IMAGE.set("");
         RenderArgs.BACKGROUND_CROP_X.set(0.0D);
@@ -160,12 +217,31 @@ public final class ConfigFragment extends Fragment implements MuiModApi.OnWindow
     public void setBackgroundDim(double dim) {
         RenderArgs.BACKGROUND_DIM.set(dim);
         ConfigSaver.changed();
-        refreshBackground();
+        if (this.slideshow != null) {
+            this.slideshow.setDim(dim);
+        } else {
+            refreshBackground();
+        }
     }
 
     private void refreshBackground() {
         FrameLayout root = this.rootView;
         if (root == null) return;
+
+        stopSlideshow();
+
+        List<Path> files = ConfigBackground.images();
+        if (!files.isEmpty()) {
+            BackgroundSlideshow show = new BackgroundSlideshow(root, files);
+            this.slideshow = show;
+            show.start();
+            return;
+        }
+
+        if (!RenderArgs.BACKGROUND_FOLDER.get().isBlank()) {
+            root.setBackground(new ColorDrawable(0xC00A0B0F));
+            return;
+        }
 
         Image image = ConfigBackground.image();
         if (image != null) {
@@ -179,6 +255,12 @@ public final class ConfigFragment extends Fragment implements MuiModApi.OnWindow
             root.setBackground(new ColorDrawable(0xC00A0B0F));
             ConfigBackground.loadAsync(this::refreshBackground);
         }
+    }
+
+    private void stopSlideshow() {
+        if (this.slideshow == null) return;
+        this.slideshow.stop();
+        this.slideshow = null;
     }
 
     private void onImagePicked(@NotNull Path path) {
@@ -352,10 +434,7 @@ public final class ConfigFragment extends Fragment implements MuiModApi.OnWindow
     private void applyChromeAccent(int accent, int onAccent) {
         TextView logo = this.logo;
         if (logo != null) {
-            ShapeDrawable circle = new ShapeDrawable();
-            circle.setCornerRadius(UiKit.dp(logo.getContext(), 18));
-            circle.setColor(accent);
-            logo.setBackground(circle);
+            this.applyLogoCircle(logo.getContext(), accent);
             logo.setTextColor(onAccent);
         }
 
@@ -408,10 +487,7 @@ public final class ConfigFragment extends Fragment implements MuiModApi.OnWindow
             params.height = UiKit.dp(context, 36);
             this.logo.setLayoutParams(params);
 
-            ShapeDrawable circle = new ShapeDrawable();
-            circle.setCornerRadius(UiKit.dp(context, 18));
-            circle.setColor(UiKit.primary(context));
-            this.logo.setBackground(circle);
+            this.applyLogoCircle(context, UiKit.primary(context));
             this.logo.setTextColor(UiKit.onPrimary(context));
             this.logo.setTextSize(16);
         }
@@ -430,6 +506,21 @@ public final class ConfigFragment extends Fragment implements MuiModApi.OnWindow
         this.onAccentColor = UiKit.onPrimary(context);
     }
 
+    private void applyLogoCircle(@NotNull Context context, int color) {
+        TextView logo = this.logo;
+        if (logo == null) return;
+
+        if (this.logoCircle == null) {
+            this.logoCircle = new ShimmerCircleDrawable(logo, color);
+            TextShimmer.attach(this.logoCircle);
+        } else {
+            this.logoCircle.setBaseColor(color);
+        }
+
+        this.logoCircle.setCornerRadius(UiKit.dp(context, 18));
+        logo.setBackground(this.logoCircle);
+    }
+
     private void styleHint(@NotNull Context context) {
         this.styleHint(UiKit.primary(context));
     }
@@ -439,12 +530,15 @@ public final class ConfigFragment extends Fragment implements MuiModApi.OnWindow
         if (hint == null) return;
         Context context = hint.getContext();
 
-        ShapeDrawable box = new ShapeDrawable();
-        box.setCornerRadius(UiKit.dp(context, 8));
-        box.setColor(ColorStateList.modulateColor(accent, 0.14F));
-        box.setStroke(Math.max(1, UiKit.dp(context, 1)),
-                ColorStateList.modulateColor(accent, 0.7F));
-        hint.setBackground(box);
+        if (this.hintBox == null) {
+            this.hintBox = new ShimmerHintDrawable(hint, accent);
+            this.hintBox.setCornerRadius(UiKit.dp(context, 8));
+            TextShimmer.attach(this.hintBox);
+            hint.setBackground(this.hintBox);
+        } else {
+            this.hintBox.setBaseColor(accent);
+        }
+
         hint.setTextColor(UiKit.onSurfaceVariant(context));
     }
 
@@ -456,13 +550,11 @@ public final class ConfigFragment extends Fragment implements MuiModApi.OnWindow
         rail.setPadding(0, UiKit.dp(context, 18), 0, UiKit.dp(context, 18));
 
         TextView logo = UiKit.heading(context, "N", 16, UiKit.onPrimary(context));
+        if (logo instanceof ShimmerTextView shimmer) shimmer.setShimmerEnabled(false);
         logo.setGravity(Gravity.CENTER);
-        ShapeDrawable circle = new ShapeDrawable();
-        circle.setCornerRadius(UiKit.dp(context, 18));
-        circle.setColor(UiKit.primary(context));
-        logo.setBackground(circle);
         rail.addView(logo, new LinearLayout.LayoutParams(UiKit.dp(context, 36), UiKit.dp(context, 36)));
         this.logo = logo;
+        this.applyLogoCircle(context, UiKit.primary(context));
 
         LinearLayout nav = UiKit.column(context);
         nav.setGravity(Gravity.CENTER);
@@ -614,6 +706,11 @@ public final class ConfigFragment extends Fragment implements MuiModApi.OnWindow
     @Override
     public void onDestroyView() {
         MuiModApi.removeOnWindowResizeListener(this);
+        this.stopSlideshow();
+        TextShimmer.detach(this.logoCircle);
+        this.logoCircle = null;
+        TextShimmer.detach(this.hintBox);
+        this.hintBox = null;
         this.themeToken++;
         if (this.themeAnimator != null) {
             this.themeAnimator.cancel();

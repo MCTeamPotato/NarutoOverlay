@@ -3,6 +3,7 @@ package me.kall.narutooverlay.config.ui;
 import icyllis.modernui.mc.MuiModApi;
 import icyllis.modernui.util.DataSet;
 import me.kall.narutooverlay.card.Card;
+import me.kall.narutooverlay.config.ui.background.ConfigBackground;
 import me.kall.narutooverlay.event.TextRelocation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
@@ -31,6 +32,10 @@ public final class ConfigUi {
                         (minecraft, previous) -> create(previous, null)));
 
         MinecraftForge.EVENT_BUS.addListener(ConfigUi::onMouseButton);
+    }
+
+    public static void migrateBundledDefaults() {
+        ConfigBackground.migrateBundledDefaults();
     }
 
     public static @NotNull Screen create(@Nullable Screen previous, @Nullable String cardId) {

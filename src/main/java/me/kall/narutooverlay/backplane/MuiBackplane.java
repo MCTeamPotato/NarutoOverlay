@@ -25,7 +25,7 @@ public class MuiBackplane extends AbstractBackplane {
         extended.fillRoundRect(cardLeft, cardTop, cardRight, cardBottom, CORNER_RADIUS);
 
         if (card.accent()) {
-            extended.setColor(palette.accent());
+            extended.setGradient(ExtendedGuiGraphics.Orientation.TOP_BOTTOM, palette.accent() | 0xFF000000, RenderArgs.borderColor() | 0xFF000000);
             extended.fillRoundRect(card.accentLeft(), cardTop + ACCENT_INSET, card.accentRight(), cardBottom - ACCENT_INSET, ACCENT_RADIUS);
         }
 

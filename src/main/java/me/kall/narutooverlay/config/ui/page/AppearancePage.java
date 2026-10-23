@@ -1,5 +1,8 @@
-package me.kall.narutooverlay.config.ui;
+package me.kall.narutooverlay.config.ui.page;
 
+import me.kall.narutooverlay.config.ui.widget.ColorOverlay;
+import me.kall.narutooverlay.config.ui.widget.TextShimmer;
+import me.kall.narutooverlay.config.ui.widget.UiKit;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.mc.ui.ThemeControl;
@@ -14,18 +17,23 @@ import icyllis.modernui.widget.SeekBar;
 import icyllis.modernui.widget.TextView;
 import me.kall.narutooverlay.config.ConfigSaver;
 import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.config.ui.ConfigFragment;
 import me.kall.narutooverlay.theme.Palette;
 import me.kall.narutooverlay.theme.Theme;
 import me.kall.narutooverlay.theme.ValueLevel;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
 import java.util.function.IntSupplier;
 
 public final class AppearancePage extends Page {
     private static final String GROUP = "narutooverlay.config.";
 
     public static final int PAGE_INDEX = 1;
+
+    private @Nullable LinearLayout shimmerControls;
 
     public AppearancePage(@NotNull Context context) {
         super(context);
@@ -37,6 +45,7 @@ public final class AppearancePage extends Page {
         header("narutooverlay.config.appearance.title", "narutooverlay.config.appearance.subtitle");
         addThemes();
         addDisplay();
+        addShimmerTuning();
         addBackplane();
         addPerformance();
     }
@@ -172,6 +181,154 @@ public final class AppearancePage extends Page {
                     RenderArgs.DRAW_BACKPLANE.set(checked);
                     ConfigSaver.changed();
                 }), UiKit.fill());
+        card.addView(UiKit.divider(this.context), dividerParams());
+
+        LinearLayout flow = UiKit.switchRow(this.context,
+                UiKit.str(GROUP + "appearance.textShimmer"),
+                UiKit.str(GROUP + "appearance.textShimmer.desc"),
+                RenderArgs.TEXT_SHIMMER.get(),
+                checked -> {
+                    RenderArgs.TEXT_SHIMMER.set(checked);
+                    ConfigSaver.changed();
+                    TextShimmer.refresh();
+                    this.updateShimmerControls();
+                });
+        ThemeControl.setViewAndChildrenEnabled(flow, RenderArgs.palette().hasAccent());
+        card.addView(flow, UiKit.fill());
+    }
+
+    private void addShimmerTuning() {
+        LinearLayout card = section("narutooverlay.config.appearance.shimmer");
+
+        card.addView(UiKit.switchRow(this.context,
+                UiKit.str(GROUP + "appearance.shimmerHud"),
+                UiKit.str(GROUP + "appearance.shimmerHud.desc"),
+                RenderArgs.HUD_TEXT_SHIMMER.get(),
+                checked -> {
+                    RenderArgs.HUD_TEXT_SHIMMER.set(checked);
+                    ConfigSaver.changed();
+                }), UiKit.fill());
+        card.addView(UiKit.divider(this.context), dividerParams());
+
+        card.addView(UiKit.switchRow(this.context,
+                UiKit.str(GROUP + "appearance.shimmerConfig"),
+                UiKit.str(GROUP + "appearance.shimmerConfig.desc"),
+                RenderArgs.CONFIG_TEXT_SHIMMER.get(),
+                checked -> {
+                    RenderArgs.CONFIG_TEXT_SHIMMER.set(checked);
+                    ConfigSaver.changed();
+                    TextShimmer.refresh();
+                }), UiKit.fill());
+        card.addView(UiKit.divider(this.context), dividerParams());
+
+        card.addView(UiKit.switchRow(this.context,
+                UiKit.str(GROUP + "appearance.shimmerControls"),
+                UiKit.str(GROUP + "appearance.shimmerControls.desc"),
+                RenderArgs.CONTROL_SHIMMER.get(),
+                checked -> {
+                    RenderArgs.CONTROL_SHIMMER.set(checked);
+                    ConfigSaver.changed();
+                    TextShimmer.refresh();
+                }), UiKit.fill());
+        card.addView(UiKit.divider(this.context), dividerParams());
+
+        double speed = RenderArgs.TEXT_SHIMMER_SPEED.get();
+        card.addView(this.sliderRow(
+                "narutooverlay.config.appearance.shimmerSpeed",
+                28,
+                (int) Math.round((speed - 0.2D) / 0.1D),
+                progress -> RenderArgs.TEXT_SHIMMER_SPEED.set(0.2D + progress * 0.1D),
+                progress -> String.format(java.util.Locale.ROOT, "%.1fx", 0.2D + progress * 0.1D)
+        ), UiKit.fill());
+        card.addView(UiKit.divider(this.context), dividerParams());
+
+        double scale = RenderArgs.TEXT_SHIMMER_SCALE.get();
+        card.addView(this.sliderRow(
+                "narutooverlay.config.appearance.shimmerDensity",
+                28,
+                (int) Math.round((scale - 0.2D) / 0.1D),
+                progress -> RenderArgs.TEXT_SHIMMER_SCALE.set(0.2D + progress * 0.1D),
+                progress -> String.format(java.util.Locale.ROOT, "%.1fx", 0.2D + progress * 0.1D)
+        ), UiKit.fill());
+        card.addView(UiKit.divider(this.context), dividerParams());
+
+        int strength = (int) Math.round(RenderArgs.TEXT_SHIMMER_STRENGTH.get() * 100.0D);
+        card.addView(this.sliderRow(
+                "narutooverlay.config.appearance.shimmerStrength",
+                100,
+                strength,
+                progress -> RenderArgs.TEXT_SHIMMER_STRENGTH.set(progress / 100.0D),
+                progress -> progress + "%"
+        ), UiKit.fill());
+        card.addView(UiKit.divider(this.context), dividerParams());
+
+        int hudFps = RenderArgs.TEXT_SHIMMER_FPS.get();
+        card.addView(this.sliderRow(
+                "narutooverlay.config.appearance.shimmerFps",
+                235,
+                hudFps - 5,
+                progress -> RenderArgs.TEXT_SHIMMER_FPS.set(5 + progress),
+                progress -> 5 + progress + " Hz"
+        ), UiKit.fill());
+        card.addView(UiKit.divider(this.context), dividerParams());
+
+        int configFps = RenderArgs.CONFIG_SHIMMER_FPS.get();
+        card.addView(this.sliderRow(
+                "narutooverlay.config.appearance.configShimmerFps",
+                115,
+                configFps - 5,
+                progress -> RenderArgs.CONFIG_SHIMMER_FPS.set(5 + progress),
+                progress -> 5 + progress + " Hz"
+        ), UiKit.fill());
+        card.addView(UiKit.divider(this.context), dividerParams());
+
+        card.addView(UiKit.switchRow(this.context,
+                UiKit.str(GROUP + "appearance.shimmerCache"),
+                UiKit.str(GROUP + "appearance.shimmerCache.desc"),
+                RenderArgs.TEXT_SHIMMER_CACHE.get(),
+                checked -> {
+                    RenderArgs.TEXT_SHIMMER_CACHE.set(checked);
+                    ConfigSaver.changed();
+                }), UiKit.fill());
+
+        this.shimmerControls = card;
+        this.updateShimmerControls();
+    }
+
+    private @NotNull LinearLayout sliderRow(@NotNull String titleKey, int max, int progress,
+                                            @NotNull IntConsumer onProgress,
+                                            @NotNull IntFunction<String> formatter) {
+        LinearLayout box = UiKit.column(this.context);
+
+        TextView valueText = UiKit.text(this.context, formatter.apply(progress), 12,
+                UiKit.primary(this.context));
+        LinearLayout titleRow = UiKit.row(this.context);
+        titleRow.addView(UiKit.text(this.context, UiKit.str(titleKey), 14,
+                UiKit.onSurface(this.context)), UiKit.weight());
+        titleRow.addView(valueText, UiKit.wrap());
+        box.addView(titleRow, UiKit.fill());
+
+        SeekBar slider = UiKit.slider(this.context, max, progress);
+        LinearLayout.LayoutParams params = UiKit.fill();
+        params.setMargins(UiKit.dp(this.context, 2), 0, UiKit.dp(this.context, 2), 0);
+        box.addView(slider, params);
+
+        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int value, boolean fromUser) {
+                if (!fromUser) return;
+                valueText.setText(formatter.apply(value));
+                onProgress.accept(value);
+                ConfigSaver.changed();
+            }
+        });
+        return box;
+    }
+
+    private void updateShimmerControls() {
+        if (this.shimmerControls == null) return;
+        ThemeControl.setViewAndChildrenEnabled(this.shimmerControls,
+                RenderArgs.TEXT_SHIMMER.get() && RenderArgs.palette().hasAccent());
     }
 
     private void addBackplane() {

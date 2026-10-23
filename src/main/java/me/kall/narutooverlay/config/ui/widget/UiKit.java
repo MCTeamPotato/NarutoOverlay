@@ -1,4 +1,4 @@
-package me.kall.narutooverlay.config.ui;
+package me.kall.narutooverlay.config.ui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.core.Context;
@@ -28,6 +28,10 @@ public final class UiKit {
 
     public static @NotNull String str(@NotNull String key) {
         return I18n.get(key);
+    }
+
+    public static @NotNull String str(@NotNull String key, Object... args) {
+        return I18n.get(key, args);
     }
 
     public static int dp(@NotNull Context context, float value) {
@@ -91,7 +95,7 @@ public final class UiKit {
     }
 
     public static @NotNull TextView text(@NotNull Context context, @NotNull CharSequence text, float size, int color) {
-        TextView view = new TextView(context);
+        TextView view = new ShimmerTextView(context);
         view.setText(text);
         view.setTextSize(size);
         view.setTextColor(color);
@@ -151,7 +155,7 @@ public final class UiKit {
      * the Modern UI fallback accent.
      */
     public static @NotNull Switch switchControl(@NotNull Context context) {
-        Switch toggle = new Switch(context);
+        ShimmerSwitch toggle = new ShimmerSwitch(context);
 
         int accent = Accent.primary();
 
@@ -198,6 +202,7 @@ public final class UiKit {
                         Accent.onPrimary(),
                         onSurfaceVariant(context)
                 }));
+        toggle.bind(track, accent, surfaceContainerHighest(context));
         return toggle;
     }
 
@@ -297,7 +302,7 @@ public final class UiKit {
     }
 
     public static @NotNull SeekBar slider(@NotNull Context context, int max, int progress) {
-        SeekBar bar = new SeekBar(context);
+        ShimmerSeekBar bar = new ShimmerSeekBar(context);
         bar.setMin(0);
         bar.setMax(max);
         bar.setProgress(Math.max(0, Math.min(max, progress)));
@@ -306,12 +311,13 @@ public final class UiKit {
         bar.setProgressTintList(ColorStateList.valueOf(accent));
         bar.setProgressBackgroundTintList(ColorStateList.valueOf(Accent.muted()));
         bar.setThumbTintList(ColorStateList.valueOf(accent));
+        bar.bind(accent);
         return bar;
     }
 
     public static @NotNull TextView chip(@NotNull Context context, @NotNull CharSequence label, boolean checked,
                                          @NotNull Consumer<Boolean> onChange) {
-        TextView chip = new TextView(context);
+        TextView chip = new ShimmerTextView(context);
         chip.setText(label);
         chip.setTextSize(11);
         chip.setGravity(Gravity.CENTER);
@@ -355,8 +361,8 @@ public final class UiKit {
     public static @NotNull Button button(@NotNull Context context, @NotNull CharSequence label, boolean outlined,
                                          @NotNull View.OnClickListener onClick) {
         Button button = outlined
-                ? new Button(context, null, R.attr.buttonOutlinedStyle)
-                : new Button(context, null, R.attr.buttonTonalStyle);
+                ? new ShimmerButton(context, null, R.attr.buttonOutlinedStyle)
+                : new ShimmerButton(context, null, R.attr.buttonTonalStyle);
         button.setText(label);
         button.setTextSize(12);
         button.setMinimumHeight(dp(context, 36));

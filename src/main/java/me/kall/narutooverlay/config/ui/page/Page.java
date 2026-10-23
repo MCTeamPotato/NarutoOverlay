@@ -1,5 +1,6 @@
-package me.kall.narutooverlay.config.ui;
+package me.kall.narutooverlay.config.ui.page;
 
+import me.kall.narutooverlay.config.ui.widget.UiKit;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;

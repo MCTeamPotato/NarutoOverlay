@@ -1,4 +1,4 @@
-package me.kall.narutooverlay.config.ui;
+package me.kall.narutooverlay.config.ui.widget;
 
 import icyllis.modernui.util.ColorStateList;
 import me.kall.narutooverlay.config.RenderArgs;
