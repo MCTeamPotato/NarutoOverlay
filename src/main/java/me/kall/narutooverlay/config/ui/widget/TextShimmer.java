@@ -4,6 +4,7 @@ import icyllis.modernui.animation.ValueAnimator;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewParent;
 import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.text.ShimmerClock;
 import me.kall.narutooverlay.theme.Palette;
 import net.minecraft.Util;
 import org.jetbrains.annotations.NotNull;
@@ -101,10 +102,12 @@ public final class TextShimmer {
             return;
         }
 
-        float time = now / 1000.0F;
-        float speed = RenderArgs.TEXT_SHIMMER_SPEED.get().floatValue();
-        float scale = RenderArgs.TEXT_SHIMMER_SCALE.get().floatValue();
-        float strength = RenderArgs.TEXT_SHIMMER_STRENGTH.get().floatValue();
+        ShimmerClock.update();
+        float time = (float) ShimmerClock.time();
+        float scaleA = (float) ShimmerClock.scaleFrom();
+        float scaleB = (float) ShimmerClock.scaleTo();
+        float scaleMix = (float) ShimmerClock.scaleMix();
+        float strength = (float) ShimmerClock.strength();
         int[] location = new int[2];
         int[] colors = ramp();
         float[] stops = {0.0F, 0.12F, 0.25F, 0.40F, 0.55F, 0.70F, 0.82F, 0.92F, 1.0F};
@@ -130,15 +133,17 @@ public final class TextShimmer {
                 parent = view.getParent();
             }
 
-            float wave = wave(x, y, time, speed, scale);
+            float waveA = wave(x, y, time, scaleA);
+            float waveB = wave(x, y, time, scaleB);
+            float wave = waveA + (waveB - waveA) * scaleMix;
             int color = rampColor(colors, stops, wave);
             target.applyShimmerColor(lerp(target.shimmerBaseColor(), color,
                     target.shimmerStrength() * strength));
         }
     }
 
-    private static float wave(float x, float y, float time, float speed, float scale) {
-        float t = time * TIME_SCALE * speed;
+    private static float wave(float x, float y, float time, float scale) {
+        float t = time * TIME_SCALE;
         float a = (float) Math.sin((x * SPATIAL_X + y * SPATIAL_Y) * scale - t);
         float b = (float) Math.sin((x * SPATIAL_X2 - y * SPATIAL_Y2) * scale + t * 0.7F + 1.3F);
         return (a + b) * 0.25F + 0.5F;

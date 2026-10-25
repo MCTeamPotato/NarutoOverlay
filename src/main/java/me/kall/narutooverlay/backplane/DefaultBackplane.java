@@ -11,7 +11,7 @@ public class DefaultBackplane extends AbstractBackplane {
     private static final float CORNER_ALPHA = 0.35F;
 
     @Override
-    protected void draw(@NotNull GuiGraphics graphics, @NotNull Card card, @NotNull Palette palette, int @NotNull [] dividers) {
+    protected void draw(@NotNull GuiGraphics graphics, @NotNull Card card, @NotNull Palette palette, int @NotNull [] dividers, int borderColor) {
         int left = card.left();
         int top = card.top();
         int right = card.right();
@@ -29,7 +29,7 @@ public class DefaultBackplane extends AbstractBackplane {
             graphics.fillGradient(card.accentLeft(), top + 1, card.accentRight(), bottom - 1, palette.accent() | 0xFF000000, RenderArgs.borderColor() | 0xFF000000);
         }
 
-        int border = RenderArgs.borderColor();
+        int border = borderColor;
         graphics.fill(left + 1, top, right - 1, top + 1, border);
         graphics.fill(left + 1, bottom - 1, right - 1, bottom, border);
         graphics.fill(left, top + 1, left + 1, bottom - 1, border);
@@ -41,9 +41,10 @@ public class DefaultBackplane extends AbstractBackplane {
         graphics.fill(left, bottom - 1, left + 1, bottom, corner);
         graphics.fill(right - 1, bottom - 1, right, bottom, corner);
 
+        int divider = RenderArgs.borderColor();
         for (int offset : dividers) {
             int x = card.dividerColumn(offset);
-            graphics.fill(x, top + 1, x + 1, bottom - 1, border);
+            graphics.fill(x, top + 1, x + 1, bottom - 1, divider);
         }
     }
 }

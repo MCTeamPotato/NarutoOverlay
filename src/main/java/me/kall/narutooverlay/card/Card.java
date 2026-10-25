@@ -21,8 +21,6 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class Card<D> {
-    private static final int GLYPH_HEIGHT = 7;
-
     private final String id;
     private final int defaultLeft;
     private final int defaultTop;
@@ -30,6 +28,7 @@ public abstract class Card<D> {
     private final ForgeConfigSpec.BooleanValue enabled;
     private final ForgeConfigSpec.IntValue left;
     private final ForgeConfigSpec.IntValue top;
+    private final ForgeConfigSpec.ConfigValue<String> group;
     private final ForgeConfigSpec.ConfigValue<List<? extends String>> order;
 
     private final Map<String, Field<D>> fields = new LinkedHashMap<>();
@@ -61,6 +60,12 @@ public abstract class Card<D> {
         this.top = builder
                 .comment("Vertical position of the " + id + " overlay.")
                 .defineInRange("top", defaultTop, 0, Integer.MAX_VALUE);
+        this.group = builder
+                .comment(
+                        "Non-empty group id shared by cards merged into one outline.",
+                        "Managed by Shift-clicking cards in the chat screen; leave empty for a standalone card."
+                )
+                .define("group", "");
         this.order = builder
                 .comment(
                         "Order of the fields, from left to right.",
@@ -122,9 +127,18 @@ public abstract class Card<D> {
     public final void resetAll() {
         this.resetPosition();
         this.enabled.set(this.enabled.getDefault());
+        this.group.set("");
         this.order.set(new ArrayList<>(this.fields.keySet()));
         for (FieldConfig config : this.configs.values()) config.reset();
         ConfigVersion.bump();
+    }
+
+    public final @NotNull String group() {
+        return this.group.get();
+    }
+
+    public final void setGroup(@NotNull String group) {
+        this.group.set(group);
     }
 
     public final boolean contains(double mouseX, double mouseY) {
@@ -153,16 +167,36 @@ public abstract class Card<D> {
         int[] dividers = line.dividers();
 
         if (RenderArgs.DRAW_BACKPLANE.get()) {
-            BackplaneRenderer.render(graphics, left, top, width, height, dividers);
+            int border = CardRegistry.isSelected(this) ? 0xFFFFC42E : RenderArgs.borderColor();
+            BackplaneRenderer.render(graphics, left, top, width, height, dividers, border);
         } else {
-            int color = RenderArgs.palette().separator() | 0xFF000000;
-            for (int offset : dividers) {
-                int x = left + offset;
-                graphics.fill(x, top, x + 1, top + GLYPH_HEIGHT, color);
-            }
+            this.renderDividers(graphics, font);
         }
 
         line.draw(graphics, font, left, top, RenderArgs.DROP_SHADOW.get());
+    }
+
+    final void renderLine(@NotNull GuiGraphics graphics, @NotNull Font font) {
+        TextLine line = this.line();
+        if (line == null) return;
+
+        line.draw(graphics, font, this.left.get(), this.top.get(), RenderArgs.DROP_SHADOW.get());
+    }
+
+    final void renderDividers(@NotNull GuiGraphics graphics, @NotNull Font font) {
+        TextLine line = this.line();
+        if (line == null) return;
+
+        int left = this.left.get();
+        int top = this.top.get();
+        int color = RenderArgs.DRAW_BACKPLANE.get()
+                ? RenderArgs.borderColor()
+                : RenderArgs.palette().separator() | 0xFF000000;
+
+        for (int offset : line.dividers()) {
+            int x = left + offset;
+            graphics.fill(x, top + 1, x + 1, top + font.lineHeight - 1, color);
+        }
     }
 
     private int width(@NotNull TextLine own) {

@@ -13,7 +13,7 @@ public class MuiBackplane extends AbstractBackplane {
     private static final float MIN_DIVIDER_WIDTH = 0.5F;
 
     @Override
-    protected void draw(@NotNull GuiGraphics graphics, @NotNull Card card, @NotNull Palette palette, int @NotNull [] dividers) {
+    protected void draw(@NotNull GuiGraphics graphics, @NotNull Card card, @NotNull Palette palette, int @NotNull [] dividers, int borderColor) {
         ExtendedGuiGraphics extended = new ExtendedGuiGraphics(graphics);
 
         float cardLeft = card.left();
@@ -32,7 +32,7 @@ public class MuiBackplane extends AbstractBackplane {
         float borderWidth = RenderArgs.BACKPLANE_BORDER_WIDTH.get().floatValue();
         if (borderWidth > 0) {
             float halfBorder = borderWidth / 2;
-            extended.setColor(RenderArgs.borderColor());
+            extended.setColor(borderColor);
             extended.setStrokeWidth(borderWidth);
             extended.strokeRoundRect(cardLeft - halfBorder, cardTop - halfBorder, cardRight + halfBorder, cardBottom + halfBorder, CORNER_RADIUS + halfBorder);
         }

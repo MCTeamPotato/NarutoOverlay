@@ -93,16 +93,18 @@ public final class TextLine {
     }
 
     private void rebuildShimmerCache(int left, long now) {
-        float time = now / 1000.0F;
-        float speed = RenderArgs.TEXT_SHIMMER_SPEED.get().floatValue();
-        float scale = RenderArgs.TEXT_SHIMMER_SCALE.get().floatValue();
-        float strength = RenderArgs.TEXT_SHIMMER_STRENGTH.get().floatValue();
+        ShimmerClock.update();
+        float time = (float) ShimmerClock.time();
+        float scaleA = (float) ShimmerClock.scaleFrom();
+        float scaleB = (float) ShimmerClock.scaleTo();
+        float scaleMix = (float) ShimmerClock.scaleMix();
+        float strength = (float) ShimmerClock.strength();
         int accent = RenderArgs.palette().accent() | 0xFF000000;
         int highlight = lerp(accent, 0xFFFFFF, 0.25F);
 
         for (int i = 0; i < this.runs.length; i++) {
-            this.shimmerCache[i] = buildShimmerCache(this.runs[i], left, time, speed, scale,
-                    strength, highlight);
+            this.shimmerCache[i] = buildShimmerCache(this.runs[i], left, time, scaleA, scaleB,
+                    scaleMix, strength, highlight);
         }
 
         this.shimmerCacheAt = now;
@@ -111,8 +113,8 @@ public final class TextLine {
     }
 
     private static CachedSequence buildShimmerCache(@NotNull Run run, int left, float time,
-                                                    float speed, float scale, float strength,
-                                                    int highlight) {
+                                                    float scaleA, float scaleB, float scaleMix,
+                                                    float strength, int highlight) {
         float baseX = left + run.x();
         IntArrayList indices = new IntArrayList();
         IntArrayList codepoints = new IntArrayList();
@@ -120,8 +122,11 @@ public final class TextLine {
 
         run.sequence().accept((index, style, codePoint) -> {
             int base = style.getColor() == null ? 0xFFFFFF : style.getColor().getValue();
-            float phase = (baseX + index * 5.6F * scale) * 0.075F - time * 1.9F * speed;
-            float wave = 0.5F + 0.5F * (float) Math.sin(phase);
+            float phaseA = (baseX + index * 5.6F * scaleA) * 0.075F - time * 1.9F;
+            float phaseB = (baseX + index * 5.6F * scaleB) * 0.075F - time * 1.9F;
+            float waveA = 0.5F + 0.5F * (float) Math.sin(phaseA);
+            float waveB = 0.5F + 0.5F * (float) Math.sin(phaseB);
+            float wave = waveA + (waveB - waveA) * scaleMix;
             int color = lerp(base, highlight, wave * wave * strength);
 
             indices.add(index);
@@ -136,10 +141,12 @@ public final class TextLine {
 
     private void drawShimmerLegacy(@NotNull GuiGraphics graphics, @NotNull Font font,
                                    int left, int top, boolean shadow) {
-        float time = Util.getMillis() / 1000.0F;
-        float speed = RenderArgs.TEXT_SHIMMER_SPEED.get().floatValue();
-        float scale = RenderArgs.TEXT_SHIMMER_SCALE.get().floatValue();
-        float strength = RenderArgs.TEXT_SHIMMER_STRENGTH.get().floatValue();
+        ShimmerClock.update();
+        float time = (float) ShimmerClock.time();
+        float scaleA = (float) ShimmerClock.scaleFrom();
+        float scaleB = (float) ShimmerClock.scaleTo();
+        float scaleMix = (float) ShimmerClock.scaleMix();
+        float strength = (float) ShimmerClock.strength();
         int accent = RenderArgs.palette().accent() | 0xFF000000;
         int highlight = lerp(accent, 0xFFFFFF, 0.25F);
         float y = top + textOffset();
@@ -149,8 +156,11 @@ public final class TextLine {
 
             FormattedCharSequence shimmered = sink -> run.sequence().accept((index, style, codePoint) -> {
                 int base = style.getColor() == null ? 0xFFFFFF : style.getColor().getValue();
-                float phase = (baseX + index * 5.6F * scale) * 0.075F - time * 1.9F * speed;
-                float wave = 0.5F + 0.5F * (float) Math.sin(phase);
+                float phaseA = (baseX + index * 5.6F * scaleA) * 0.075F - time * 1.9F;
+                float phaseB = (baseX + index * 5.6F * scaleB) * 0.075F - time * 1.9F;
+                float waveA = 0.5F + 0.5F * (float) Math.sin(phaseA);
+                float waveB = 0.5F + 0.5F * (float) Math.sin(phaseB);
+                float wave = waveA + (waveB - waveA) * scaleMix;
                 int color = lerp(base, highlight, wave * wave * strength);
 
                 return sink.accept(index, style.withColor(TextColor.fromRgb(color)), codePoint);

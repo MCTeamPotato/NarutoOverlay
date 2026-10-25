@@ -13,6 +13,7 @@ import icyllis.modernui.widget.TextView;
 import me.kall.narutooverlay.NarutoOverlay;
 import me.kall.narutooverlay.config.RenderArgs;
 import net.minecraft.SharedConstants;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLPaths;
@@ -52,15 +53,31 @@ public final class AboutPage extends Page {
         config.addView(pathView, pathParams);
 
         TextView copy = UiKit.text(this.context, UiKit.str(GROUP + "about.copyPath"), 12, UiKit.primary(this.context));
-        copy.setPadding(0, UiKit.dp(this.context, 8), 0, 0);
         copy.setOnClickListener(view -> {
             Minecraft.getInstance().keyboardHandler.setClipboard(path.toString());
             copy.setText(UiKit.str(GROUP + "about.copied"));
         });
-        config.addView(copy, UiKit.wrap());
+
+        TextView open = UiKit.text(this.context, UiKit.str(GROUP + "about.openFolder"), 12, UiKit.primary(this.context));
+        open.setGravity(Gravity.END);
+        open.setOnClickListener(view -> reveal(path));
+
+        LinearLayout actions = UiKit.row(this.context);
+        LinearLayout.LayoutParams actionParams = UiKit.fill();
+        actionParams.topMargin = UiKit.dp(this.context, 4);
+        config.addView(actions, actionParams);
+
+        actions.addView(copy, UiKit.weight());
+        LinearLayout.LayoutParams openParams = UiKit.wrap();
+        openParams.leftMargin = UiKit.dp(this.context, 12);
+        actions.addView(open, openParams);
 
         LinearLayout hints = section("narutooverlay.config.about.usage");
         hints.addView(hint("narutooverlay.config.about.hint.drag"), UiKit.fill());
+        hints.addView(UiKit.divider(this.context), dividerParams());
+        hints.addView(hint("narutooverlay.config.about.hint.merge"), UiKit.fill());
+        hints.addView(UiKit.divider(this.context), dividerParams());
+        hints.addView(hint("narutooverlay.config.about.hint.split"), UiKit.fill());
         hints.addView(UiKit.divider(this.context), dividerParams());
         hints.addView(hint("narutooverlay.config.about.hint.open"), UiKit.fill());
         hints.addView(UiKit.divider(this.context), dividerParams());
@@ -201,6 +218,31 @@ public final class AboutPage extends Page {
         row.addView(UiKit.text(this.context, UiKit.str(key + ".desc"), 11, UiKit.onSurfaceVariant(this.context)),
                 UiKit.fill());
         return row;
+    }
+
+    private void reveal(@NotNull Path path) {
+        Path absolute = path.toAbsolutePath();
+        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+
+        try {
+            if (absolute.toFile().isFile() && os.contains("win")) {
+                new ProcessBuilder("explorer.exe", "/select," + absolute).start();
+                return;
+            }
+
+            if (absolute.toFile().isFile() && os.contains("mac")) {
+                new ProcessBuilder("open", "-R", absolute.toString()).start();
+                return;
+            }
+        } catch (Throwable ignored) {
+            // Fall through to opening the parent folder.
+        }
+
+        try {
+            Util.getPlatform().openFile(absolute.getParent().toFile());
+        } catch (Throwable ignored) {
+            // The platform may not expose a file manager; keep the row usable.
+        }
     }
 
     private @NotNull String version() {

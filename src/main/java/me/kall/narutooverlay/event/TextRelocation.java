@@ -6,16 +6,15 @@ import me.kall.narutooverlay.card.CardRegistry;
 import me.kall.narutooverlay.config.ConfigSaver;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.List;
-
 public class TextRelocation {
-    private static @Nullable Card<?> selected;
+    private static @Nullable Card<?> dragging;
 
     private static double deltaX;
     private static double deltaY;
@@ -32,20 +31,47 @@ public class TextRelocation {
         double mouseY = mouseY();
 
         Card<?> card = pick(mouseX, mouseY);
-        if (card != null) {
-            selected = card;
-            deltaX = mouseX - card.left();
-            deltaY = mouseY - card.top();
+
+        if (card == null) {
+            if (!Screen.hasShiftDown() && !Screen.hasControlDown()) CardRegistry.select(null);
+            return;
         }
+
+        if (Screen.hasControlDown()) {
+            if (CardRegistry.split(card)) ConfigSaver.changed();
+            CardRegistry.select(null);
+            dragging = null;
+            event.setCanceled(true);
+            return;
+        }
+
+        if (Screen.hasShiftDown()) {
+            CardRegistry.select(CardRegistry.isSelected(card) ? null : card);
+            dragging = null;
+            event.setCanceled(true);
+            return;
+        }
+
+        Card<?> mergeSource = CardRegistry.selected();
+        if (mergeSource != null) {
+            CardRegistry.select(null);
+            dragging = null;
+
+            if (mergeSource != card && CardRegistry.merge(mergeSource, card)) {
+                ConfigSaver.changed();
+            }
+
+            event.setCanceled(true);
+            return;
+        }
+
+        dragging = card;
+        deltaX = mouseX - card.left();
+        deltaY = mouseY - card.top();
     }
 
     public static @Nullable Card<?> pick(double mouseX, double mouseY) {
-        List<Card<?>> cards = CardRegistry.all();
-        for (int i = cards.size() - 1; i >= 0; i--) {
-            Card<?> card = cards.get(i);
-            if (card.contains(mouseX, mouseY)) return card;
-        }
-        return null;
+        return CardRegistry.pick(mouseX, mouseY);
     }
 
     public static double mouseX() {
@@ -61,9 +87,21 @@ public class TextRelocation {
     }
 
     public static void drag(TickEvent.@NotNull ClientTickEvent event) {
-        if (!event.phase.equals(TickEvent.Phase.START) || selected == null) return;
+        if (!event.phase.equals(TickEvent.Phase.START) || dragging == null) return;
 
-        selected.moveTo(mouseX() - deltaX, mouseY() - deltaY);
+        Card<?> moving = dragging;
+        int oldLeft = moving.left();
+        int oldTop = moving.top();
+
+        moving.moveTo(mouseX() - deltaX, mouseY() - deltaY);
+
+        int dx = moving.left() - oldLeft;
+        int dy = moving.top() - oldTop;
+        if (dx == 0 && dy == 0) return;
+
+        for (Card<?> member : CardRegistry.groupMembers(moving)) {
+            if (member != moving) member.moveTo(member.left() + dx, member.top() + dy);
+        }
     }
 
     public static void release(InputEvent.MouseButton.@NotNull Pre event) {
@@ -73,9 +111,9 @@ public class TextRelocation {
         if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return;
         if (action != GLFW.GLFW_RELEASE) return;
 
-        if (selected != null) {
+        if (dragging != null) {
             ConfigSaver.changed();
-            selected = null;
+            dragging = null;
         }
     }
 }
