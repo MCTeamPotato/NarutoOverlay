@@ -8,7 +8,7 @@
 
 NarutoOverlay 是一个面向 **Minecraft 1.20.1 Forge** 的客户端 HUD 信息模组。它默认只显示瞬时帧率、半透明背板和文字流光，其他信息（最低/平均/1% 低帧、GC、内存）都可以在游戏内配置界面按需打开。
 
-配置界面基于 [ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui)，强烈建议安装；没有 ModernUI 时 HUD 仍可使用，但无法打开可视化配置界面。
+配置界面通过可选的 [NarutoUI](https://www.curseforge.com/minecraft/mc-mods/narutoui) 提供的 Modern UI API 构建；安装 **NarutoUI 1.0.0+** 和 [ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui) 后可以打开可视化配置界面，不安装时 HUD 仍可正常使用。
 
 ---
 ## 特点
@@ -44,17 +44,6 @@ NarutoOverlay 是一个面向 **Minecraft 1.20.1 Forge** 的客户端 HUD 信息
 - 支持单张背景图，也支持整个文件夹的图片轮播与交叉淡入淡出。
 - 启动时自动把内置的 `bg1.jpg`、`bg2.jpg`、`logo.jpg` 解压到 `<游戏目录>/narutooverlay` 并作为默认轮播。
 - 支持选择文件夹、选择单图、裁剪单图、调节轮播间隔、淡入时长和背景暗度。
-
----
-
-## 安装
-
-1. 安装 Minecraft 1.20.1 与对应版本的 Forge。
-2. 将 `narutooverlay-1.20.1-1.0.0.jar` 放入 `.minecraft/mods`。
-3. 强烈建议同时安装 **ModernUI 3.12.0+**，否则只能使用 HUD，无法打开配置界面。
-4. 启动游戏。
-
-首次启动会在游戏目录下创建 `narutooverlay` 文件夹并解压默认背景图。
 
 ---
 
@@ -233,7 +222,7 @@ HUD 的流光只在游戏内 HUD 渲染时运行；配置界面的流光只在�
 ## 常见问题
 
 **Q：配置界面打不开 / 没有 Config 按钮？**  
-A：安装 ModernUI 3.12.0+。HUD 本身不依赖 ModernUI，但配置界面依赖它。
+A：确认已安装 NarutoUI 1.0.0+ 和 ModernUI 3.12.0+。它们是可选的配置界面依赖，不影响 HUD 本体。
 
 **Q：文字流光没有效果？**  
 A：确认主题是 NARUTO、总开关和对应类别开关已打开、颜色强度大于 0；CLASSIC 主题下流光不可用。
@@ -262,7 +251,7 @@ A：不需要。它是客户端 HUD 模组，服务器无需安装。
 
 - 作者：**Kasualix**, **DeepSeek-V4.1-Flash-1017**
 - 许可：[LGPL-3.0](https://github.com/MCTeamPotato/NarutoOverlay?tab=LGPL-3.0-1-ov-file)
-- 配置界面与文本渲染使用了 [ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui)，感谢 BloCamLimb 与其贡献者。
+- 配置界面通过 NarutoUI 使用 [ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui)，感谢 BloCamLimb 与其贡献者。
 - 感谢 Minecraft、Forge，以及 Naruto。
 
 > _「流光破暗，帧定乾坤」_

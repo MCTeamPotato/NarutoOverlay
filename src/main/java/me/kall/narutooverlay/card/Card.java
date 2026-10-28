@@ -1,5 +1,7 @@
 package me.kall.narutooverlay.card;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import me.kall.narutooverlay.backplane.BackplaneRenderer;
 import me.kall.narutooverlay.config.ConfigVersion;
 import me.kall.narutooverlay.config.RenderArgs;
@@ -12,13 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public abstract class Card<D> {
     private final String id;
@@ -31,8 +27,8 @@ public abstract class Card<D> {
     private final ForgeConfigSpec.ConfigValue<String> group;
     private final ForgeConfigSpec.ConfigValue<List<? extends String>> order;
 
-    private final Map<String, Field<D>> fields = new LinkedHashMap<>();
-    private final Map<String, FieldConfig> configs = new HashMap<>();
+    private final Map<String, Field<D>> fields = new Object2ObjectLinkedOpenHashMap<>();
+    private final Map<String, FieldConfig> configs = new Object2ObjectOpenHashMap<>();
 
     private @Nullable D data;
     private @Nullable TextLine line;
@@ -247,14 +243,6 @@ public abstract class Card<D> {
         return ordered;
     }
 
-    public final int defaultLeft() {
-        return this.defaultLeft;
-    }
-
-    public final int defaultTop() {
-        return this.defaultTop;
-    }
-
     public final ForgeConfigSpec.@NotNull BooleanValue enabledValue() {
         return this.enabled;
     }
@@ -265,10 +253,6 @@ public abstract class Card<D> {
 
     public final ForgeConfigSpec.@NotNull IntValue topValue() {
         return this.top;
-    }
-
-    public final ForgeConfigSpec.@NotNull ConfigValue<List<? extends String>> orderValue() {
-        return this.order;
     }
 
     public final @NotNull @Unmodifiable List<Field<D>> allFields() {

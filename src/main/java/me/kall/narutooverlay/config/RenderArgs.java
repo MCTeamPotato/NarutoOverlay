@@ -25,10 +25,8 @@ public final class RenderArgs {
     private static final int MAX_FPS_WINDOW = 1_000_000;
 
     public static final String DEFAULT_BACKGROUND_FOLDER = "narutooverlay";
-    public static final List<String> DEFAULT_BACKGROUND_ORDER =
-            List.of("bg1.jpg", "bg2.jpg", "logo.jpg");
-    public static final String DEFAULT_BACKGROUND_IMAGE =
-            DEFAULT_BACKGROUND_FOLDER + "/bg1.jpg";
+    public static final List<String> DEFAULT_BACKGROUND_ORDER = List.of("bg1.jpg", "bg2.jpg", "logo.jpg");
+    public static final String DEFAULT_BACKGROUND_IMAGE = DEFAULT_BACKGROUND_FOLDER + "/bg1.jpg";
 
     public static final ForgeConfigSpec CONFIG;
 
@@ -273,10 +271,7 @@ public final class RenderArgs {
 
     public static int borderColor() {
         if (BACKPLANE_BORDER_OVERRIDE.get()) {
-            return BACKPLANE_BORDER_ALPHA.get() << 24
-                    | BACKPLANE_BORDER_RED.get() << 16
-                    | BACKPLANE_BORDER_GREEN.get() << 8
-                    | BACKPLANE_BORDER_BLUE.get();
+            return BACKPLANE_BORDER_ALPHA.get() << 24 | BACKPLANE_BORDER_RED.get() << 16 | BACKPLANE_BORDER_GREEN.get() << 8 | BACKPLANE_BORDER_BLUE.get();
         }
 
         return palette().border();

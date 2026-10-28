@@ -3,7 +3,7 @@ package me.kall.narutooverlay;
 import me.kall.narutooverlay.card.CardRegistry;
 import me.kall.narutooverlay.config.ConfigVersion;
 import me.kall.narutooverlay.config.RenderArgs;
-import me.kall.narutooverlay.config.ui.ConfigUi;
+import me.kall.narutooverlay.config.ui.NarutoUiCompat;
 import me.kall.narutooverlay.config.ui.background.BundledBackgrounds;
 import me.kall.narutooverlay.event.TextRelocation;
 import me.kall.narutooverlay.event.api.TaskRegistryEvent;
@@ -57,8 +57,8 @@ public final class NarutoOverlay {
             modBus.addListener(RAMTracker::listen);
             modBus.addListener(RenderArgs.GC::listen);
 
-            if (ModList.get().isLoaded("modernui")) {
-                ConfigUi.install(context);
+            if (ModList.get().isLoaded("narutoui")) {
+                NarutoUiCompat.integrate(context);
             }
         }
     }
@@ -70,8 +70,8 @@ public final class NarutoOverlay {
             event.enqueueWork(() -> {
                 BundledBackgrounds.install();
 
-                if (ModList.get().isLoaded("modernui")) {
-                    ConfigUi.migrateBundledDefaults();
+                if (ModList.get().isLoaded("modernui") && ModList.get().isLoaded("narutoui")) {
+                    NarutoUiCompat.migrateBundledDefaults();
                 }
 
                 IEventBus bus = MinecraftForge.EVENT_BUS;

@@ -1,5 +1,6 @@
 package me.kall.narutooverlay.config.ui.background;
 
+import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.graphics.BitmapFactory;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.mc.MuiModApi;
@@ -155,6 +156,20 @@ public final class ConfigBackground {
         return extension.matches("\\.[a-z0-9]{1,5}") ? extension : ".png";
     }
 
+    /**
+     * Decodes a picture off the render thread. The future completes with {@code null} when the file
+     * cannot be decoded, so callers only need to handle the success path.
+     */
+    public static @NotNull CompletableFuture<Bitmap> decode(@NotNull Path path) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return BitmapFactory.decodePath(path);
+            } catch (Throwable ignored) {
+                return null;
+            }
+        });
+    }
+
     public static void loadAsync(@NotNull Runnable onReady) {
         String name = RenderArgs.BACKGROUND_IMAGE.get();
         if (name.isEmpty()) {
@@ -171,13 +186,7 @@ public final class ConfigBackground {
             return;
         }
 
-        CompletableFuture.supplyAsync(() -> {
-            try {
-                return BitmapFactory.decodePath(path);
-            } catch (Throwable ignored) {
-                return null;
-            }
-        }).whenComplete((bitmap, error) -> {
+        decode(path).whenComplete((bitmap, error) -> {
             if (bitmap == null) return;
             MuiModApi.postToUiThread(() -> {
                 close();

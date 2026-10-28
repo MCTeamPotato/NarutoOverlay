@@ -1,6 +1,5 @@
 package me.kall.narutooverlay.config.ui.widget;
 
-import icyllis.modernui.util.ColorStateList;
 import me.kall.narutooverlay.config.RenderArgs;
 import me.kall.narutooverlay.theme.Palette;
 import org.jetbrains.annotations.NotNull;
@@ -36,27 +35,6 @@ public final class Accent {
      */
     public static int onPrimary() {
         return palette().hasAccent() ? 0xFF2A1400 : 0xFF16171C;
-    }
-
-    /**
-     * Translucent version of {@link #primary()} for selected pills and tile strokes.
-     */
-    public static int container() {
-        return ColorStateList.modulateColor(primary(), 0.18F);
-    }
-
-    /**
-     * Translucent version of {@link #primary()} for inactive slider tracks.
-     */
-    public static int muted() {
-        return ColorStateList.modulateColor(primary(), 0.28F);
-    }
-
-    /**
-     * Translucent version of {@link #primary()} for outlined controls.
-     */
-    public static int outline() {
-        return ColorStateList.modulateColor(primary(), 0.55F);
     }
 
     /**

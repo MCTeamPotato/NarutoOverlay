@@ -20,11 +20,7 @@ public class TextRelocation {
     private static double deltaY;
 
     public static void click(InputEvent.MouseButton.@NotNull Pre event) {
-        int button = event.getButton();
-        int action = event.getAction();
-
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return;
-        if (action != GLFW.GLFW_PRESS) return;
+        if (!isLeftMouse(event, GLFW.GLFW_PRESS)) return;
         if (!(Minecraft.getInstance().screen instanceof ChatScreen)) return;
 
         double mouseX = mouseX();
@@ -105,15 +101,15 @@ public class TextRelocation {
     }
 
     public static void release(InputEvent.MouseButton.@NotNull Pre event) {
-        int button = event.getButton();
-        int action = event.getAction();
-
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return;
-        if (action != GLFW.GLFW_RELEASE) return;
+        if (!isLeftMouse(event, GLFW.GLFW_RELEASE)) return;
 
         if (dragging != null) {
             ConfigSaver.changed();
             dragging = null;
         }
+    }
+
+    private static boolean isLeftMouse(InputEvent.MouseButton.@NotNull Pre event, int action) {
+        return event.getButton() == GLFW.GLFW_MOUSE_BUTTON_LEFT && event.getAction() == action;
     }
 }

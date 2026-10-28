@@ -9,6 +9,7 @@
 
   "narutooverlay.config.cards.title": "Cards",
   "narutooverlay.config.cards.subtitle": "Visibility, position and fields of every overlay card",
+  "narutooverlay.config.cards.enabled": "Enabled",
   "narutooverlay.config.cards.position": "Position",
   "narutooverlay.config.cards.fields": "Fields",
   "narutooverlay.config.cards.summary": "%s / %s fields  ·  (%s, %s)",
@@ -91,6 +92,7 @@
   "narutooverlay.config.about.environment": "Environment",
   "narutooverlay.config.about.clientOnly": "client only",
   "narutooverlay.config.about.config": "Config file",
+  "narutooverlay.config.about.path": "Path",
   "narutooverlay.config.about.copyPath": "Copy path",
   "narutooverlay.config.about.copied": "Copied",
   "narutooverlay.config.about.openFolder": "Open in file manager",

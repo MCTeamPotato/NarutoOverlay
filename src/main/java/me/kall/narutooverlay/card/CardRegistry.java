@@ -1,6 +1,7 @@
 package me.kall.narutooverlay.card;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import me.kall.narutooverlay.backplane.AbstractBackplane;
 import me.kall.narutooverlay.backplane.BackplaneRenderer;
 import me.kall.narutooverlay.config.RenderArgs;
@@ -83,21 +84,10 @@ public final class CardRegistry {
     }
 
     private static void renderGroup(@NotNull GuiGraphics graphics, @NotNull List<Card<?>> members) {
-        members.sort(Comparator.comparingInt((Card<?> card) -> card.top())
-                .thenComparingInt(card -> card.left()));
+        members.sort(Comparator.comparingInt((Card<?> card) -> card.top()).thenComparingInt(Card::left));
 
         Font font = Minecraft.getInstance().font;
-        int left = Integer.MAX_VALUE;
-        int top = Integer.MAX_VALUE;
-        int right = Integer.MIN_VALUE;
-        int bottom = Integer.MIN_VALUE;
-
-        for (Card<?> card : members) {
-            left = Math.min(left, card.left());
-            top = Math.min(top, card.top());
-            right = Math.max(right, card.left() + card.lineWidth());
-            bottom = Math.max(bottom, card.top() + font.lineHeight);
-        }
+        Bounds bounds = bounds(members);
 
         int[] separators = new int[Math.max(0, members.size() - 1)];
         for (int i = 1; i < members.size(); i++) {
@@ -108,12 +98,13 @@ public final class CardRegistry {
             int border = members.stream().anyMatch(CardRegistry::isSelected)
                     ? 0xFFFFC42E
                     : RenderArgs.borderColor();
-            BackplaneRenderer.renderGroup(graphics, left, top, right - left, bottom - top, separators, border);
+            BackplaneRenderer.renderGroup(graphics, bounds.left(), bounds.top(),
+                    bounds.right() - bounds.left(), bounds.bottom() - bounds.top(), separators, border);
         } else {
             int color = RenderArgs.palette().separator() | 0xFF000000;
             for (int y : separators) {
-                if (y <= top || y >= bottom) continue;
-                graphics.fill(left, y, right, y + 1, color);
+                if (y <= bounds.top() || y >= bounds.bottom()) continue;
+                graphics.fill(bounds.left(), y, bounds.right(), y + 1, color);
             }
         }
 
@@ -122,7 +113,7 @@ public final class CardRegistry {
     }
 
     public static @Nullable Card<?> pick(double mouseX, double mouseY) {
-        Set<String> checkedGroups = new HashSet<>();
+        Set<String> checkedGroups = new ObjectOpenHashSet<>();
 
         for (int i = CARDS.size() - 1; i >= 0; i--) {
             Card<?> card = CARDS.get(i);
@@ -150,6 +141,18 @@ public final class CardRegistry {
     }
 
     private static boolean groupContains(@NotNull List<Card<?>> members, double mouseX, double mouseY) {
+        Bounds bounds = bounds(members);
+
+        int accentExtra = RenderArgs.palette().hasAccent() ? AbstractBackplane.ACCENT_WIDTH + 1 : 0;
+        int x0 = bounds.left() - AbstractBackplane.PADDING_X - accentExtra;
+        int x1 = bounds.right() + AbstractBackplane.PADDING_RIGHT;
+        int y0 = bounds.top() - AbstractBackplane.PADDING_TOP;
+        int y1 = bounds.bottom() + AbstractBackplane.PADDING_BOTTOM;
+
+        return mouseX >= x0 && mouseX <= x1 && mouseY >= y0 && mouseY <= y1;
+    }
+
+    private static @NotNull Bounds bounds(@NotNull List<Card<?>> members) {
         Font font = Minecraft.getInstance().font;
         int left = Integer.MAX_VALUE;
         int top = Integer.MAX_VALUE;
@@ -163,13 +166,21 @@ public final class CardRegistry {
             bottom = Math.max(bottom, card.top() + font.lineHeight);
         }
 
-        int accentExtra = RenderArgs.palette().hasAccent() ? AbstractBackplane.ACCENT_WIDTH + 1 : 0;
-        int x0 = left - AbstractBackplane.PADDING_X - accentExtra;
-        int x1 = right + AbstractBackplane.PADDING_RIGHT;
-        int y0 = top - AbstractBackplane.PADDING_TOP;
-        int y1 = bottom + AbstractBackplane.PADDING_BOTTOM;
+        return new Bounds(left, top, right, bottom);
+    }
 
-        return mouseX >= x0 && mouseX <= x1 && mouseY >= y0 && mouseY <= y1;
+    private record Bounds(int left, int top, int right, int bottom) {}
+
+    private static int leftEdge(@NotNull List<Card<?>> members) {
+        int left = Integer.MAX_VALUE;
+        for (Card<?> member : members) left = Math.min(left, member.left());
+        return left;
+    }
+
+    private static int bottomEdge(@NotNull List<Card<?>> members, int lineHeight) {
+        int bottom = Integer.MIN_VALUE;
+        for (Card<?> member : members) bottom = Math.max(bottom, member.top() + lineHeight);
+        return bottom;
     }
 
     public static boolean merge(@NotNull Card<?> first, @NotNull Card<?> second) {
@@ -186,12 +197,8 @@ public final class CardRegistry {
             List<Card<?>> target = activeMembers(secondGroup);
             if (source.isEmpty() || target.isEmpty()) return false;
 
-            int left = Integer.MAX_VALUE;
-            int sourceBottom = Integer.MIN_VALUE;
-            for (Card<?> member : source) {
-                left = Math.min(left, member.left());
-                sourceBottom = Math.max(sourceBottom, member.top() + font.lineHeight);
-            }
+            int left = leftEdge(source);
+            int sourceBottom = bottomEdge(source, font.lineHeight);
 
             int targetTop = Integer.MAX_VALUE;
             for (Card<?> member : target) targetTop = Math.min(targetTop, member.top());
@@ -217,7 +224,7 @@ public final class CardRegistry {
             return true;
         }
 
-        if (!firstGroup.isEmpty() && secondGroup.isEmpty()) {
+        if (!firstGroup.isEmpty()) {
             List<Card<?>> source = activeMembers(firstGroup);
             if (source.isEmpty()) return false;
 
@@ -234,20 +241,14 @@ public final class CardRegistry {
             return true;
         }
 
-        String group = firstGroup.isEmpty() ? secondGroup : firstGroup;
-        Card<?> added = firstGroup.isEmpty() ? first : second;
-        List<Card<?>> existing = activeMembers(group);
+        List<Card<?>> existing = activeMembers(secondGroup);
         if (existing.isEmpty()) return false;
 
-        int left = Integer.MAX_VALUE;
-        int bottom = Integer.MIN_VALUE;
-        for (Card<?> member : existing) {
-            left = Math.min(left, member.left());
-            bottom = Math.max(bottom, member.top() + font.lineHeight);
-        }
+        int left = leftEdge(existing);
+        int bottom = bottomEdge(existing, font.lineHeight);
 
-        added.moveTo(left, bottom + GROUP_ROW_GAP);
-        added.setGroup(group);
+        first.moveTo(left, bottom + GROUP_ROW_GAP);
+        first.setGroup(secondGroup);
         return true;
     }
 
@@ -256,8 +257,7 @@ public final class CardRegistry {
         if (group.isEmpty()) return false;
 
         List<Card<?>> members = groupMembers(card);
-        members.sort(Comparator.comparingInt((Card<?> member) -> member.top())
-                .thenComparingInt(member -> member.left()));
+        members.sort(Comparator.comparingInt((Card<?> member) -> member.top()).thenComparingInt(Card::left));
 
         if (members.isEmpty()) return false;
 

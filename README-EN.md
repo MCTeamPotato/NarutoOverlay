@@ -8,7 +8,7 @@
 
 NarutoOverlay is a **client-side HUD information mod for Minecraft 1.20.1 Forge**. By default it only shows the instantaneous FPS, a translucent backplane and a text shimmer. Everything else — minimum / average / 1% low FPS, GC and memory information — can be enabled in the in-game configuration screen.
 
-The configuration screen is built on [ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui). Installing it is strongly recommended. Without ModernUI the HUD still works, but the visual configuration screen is unavailable.
+The configuration screen is built with the optional Modern UI API provided by [NarutoUI](https://www.curseforge.com/minecraft/mc-mods/narutoui). Install **NarutoUI 1.0.0+** and [ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui) to open it; the HUD works without them.
 
 ---
 
@@ -45,17 +45,6 @@ The configuration screen is built on [ModernUI](https://www.curseforge.com/minec
 - Supports a single background image or a folder slideshow with cross-fades.
 - On startup the bundled `bg1.jpg`, `bg2.jpg` and `logo.jpg` are extracted to `<game directory>/narutooverlay` and used as the default slideshow.
 - Choose a folder, pick a single image, crop that image, and tune slideshow interval, fade duration and background dim.
-
----
-
-## Installation
-
-1. Install Minecraft 1.20.1 and a matching Forge version.
-2. Put `narutooverlay-1.20.1-1.0.0.jar` into `.minecraft/mods`.
-3. Installing **ModernUI 3.12.0+** is strongly recommended; otherwise only the HUD is available and the configuration screen cannot be opened.
-4. Launch the game.
-
-On startup the mod creates `<game directory>/narutooverlay` and extracts the default background images there.
 
 ---
 
@@ -240,7 +229,7 @@ HUD shimmer only runs while the in-game HUD is rendered. Configuration screen sh
 ## FAQ
 
 **Q: The configuration screen is missing or there is no Config button.**  
-A: Install ModernUI 3.12.0+. The HUD itself does not require ModernUI, but the configuration screen does.
+A: Install NarutoUI 1.0.0+ and ModernUI 3.12.0+. They are optional configuration-screen dependencies; the HUD itself does not require them.
 
 **Q: The text shimmer is not visible.**  
 A: Make sure the theme is NARUTO, the master switch and the relevant category switches are enabled, and color strength is greater than 0. The shimmer is unavailable in CLASSIC.
@@ -269,7 +258,7 @@ A: No. It is a client-side HUD mod; the server does not need it.
 
 - Author: **Kasualix**, **DeepSeek-V4.1-Flash-1017**
 - License: [LGPL-3.0](https://github.com/MCTeamPotato/NarutoOverlay?tab=LGPL-3.0-1-ov-file)
-- The configuration screen and text rendering depend on [ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui). Thanks to BloCamLimb and contributors.
+- The configuration screen uses [ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui) through NarutoUI. Thanks to BloCamLimb and contributors.
 - Thanks to Minecraft, Forge, and Naruto.
 
 > _“Shimmer pierces the dark; frames rule the world.”_

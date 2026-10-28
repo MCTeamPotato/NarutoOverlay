@@ -40,8 +40,8 @@ repositories {
 }
 
 def versions = [
-        "1.20.1": [forge: "47.4.28", parchment: "2023.09.03", java: 17, mui: "3.12.0", color: "9284884"],
-        "1.21.1": [neo: "21.1.259",  parchment: "2024.11.17", java: 21, mui: "3.13.0", color: "9284879"]
+        "1.20.1": [forge: "47.4.28", parchment: "2023.09.03", java: 17, mui: "3.12.0", nui: "9341603;9341605;9341606"],
+        "1.21.1": [neo: "21.1.259",  parchment: "2024.11.17", java: 21, mui: "3.13.0", nui: ""]
 ]
 
 def versionKeys = versions[minecraft_version]
@@ -63,6 +63,10 @@ dependencies {
         implementation "dev.icyllis:modernui-core:${versionKeys.mui}"
         modImplementation("icyllis.modernui:ModernUI-NeoForge:${minecraft_version}-${versionKeys.mui}.+")
     }
+
+    String nui = versionKeys.nui
+    String[] parts = nui.split(";")
+    modImplementation("curse.maven:narutoui-1766942:${parts[0]}-sources-${parts[1]}-javadoc-${parts[2]}")
 
     if (!isNeo && hasMixin) {
         shadow(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.5"))
@@ -134,6 +138,7 @@ tasks.register("publishCurseForge", TaskPublishCurseForge) {
         mainFile.addModLoader(isNeo ? "NeoForge" : "Forge")
         mainFile.addJavaVersion("Java ${versionKeys.java}")
         mainFile.addGameVersion(minecraft_version)
+        mainFile.addOptional("narutoui")
         mainFile.addOptional("modern-ui")
 
         UploadArtifact sourceFile = mainFile.withAdditionalFile(sourcesJar)

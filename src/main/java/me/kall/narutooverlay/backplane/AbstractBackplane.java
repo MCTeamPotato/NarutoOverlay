@@ -12,36 +12,18 @@ public abstract class AbstractBackplane {
     public static final int PADDING_BOTTOM = 2;
     public static final int ACCENT_WIDTH = 2;
 
-    public final void render(@NotNull GuiGraphics graphics, int left, int top, int width, int height, int @NotNull [] dividers) {
-        this.render(graphics, left, top, width, height, dividers, RenderArgs.borderColor());
-    }
-
     public final void render(@NotNull GuiGraphics graphics, int left, int top, int width, int height, int @NotNull [] dividers, int borderColor) {
-        Palette palette = RenderArgs.palette();
-        boolean accent = palette.hasAccent();
+        Frame frame = frame(left, top, width, height);
 
-        int accentExtra = accent ? ACCENT_WIDTH + 1 : 0;
-
-        Card card = new Card(left - PADDING_X - accentExtra, top - PADDING_TOP, left + width + PADDING_RIGHT, top + height + PADDING_BOTTOM, accent, left);
-
-        this.draw(graphics, card, palette, dividers, borderColor);
-    }
-
-    public final void renderGroup(@NotNull GuiGraphics graphics, int left, int top, int width, int height, int @NotNull [] separators) {
-        this.renderGroup(graphics, left, top, width, height, separators, RenderArgs.borderColor());
+        this.draw(graphics, frame.card(), frame.palette(), dividers, borderColor);
     }
 
     public final void renderGroup(@NotNull GuiGraphics graphics, int left, int top, int width, int height, int @NotNull [] separators, int borderColor) {
-        Palette palette = RenderArgs.palette();
-        boolean accent = palette.hasAccent();
+        Frame frame = frame(left, top, width, height);
 
-        int accentExtra = accent ? ACCENT_WIDTH + 1 : 0;
+        this.draw(graphics, frame.card(), frame.palette(), new int[0], borderColor);
 
-        Card card = new Card(left - PADDING_X - accentExtra, top - PADDING_TOP, left + width + PADDING_RIGHT, top + height + PADDING_BOTTOM, accent, left);
-
-        this.draw(graphics, card, palette, new int[0], borderColor);
-
-        int separator = palette.separator() | 0xFF000000;
+        int separator = frame.palette().separator() | 0xFF000000;
         int start = top + 1;
         int end = top + height - 1;
         for (int y : separators) {
@@ -50,7 +32,18 @@ public abstract class AbstractBackplane {
         }
     }
 
+    private static @NotNull Frame frame(int left, int top, int width, int height) {
+        Palette palette = RenderArgs.palette();
+        boolean accent = palette.hasAccent();
+        int accentExtra = accent ? ACCENT_WIDTH + 1 : 0;
+
+        Card card = new Card(left - PADDING_X - accentExtra, top - PADDING_TOP, left + width + PADDING_RIGHT, top + height + PADDING_BOTTOM, accent, left);
+        return new Frame(palette, card);
+    }
+
     protected abstract void draw(@NotNull GuiGraphics graphics, @NotNull Card card, @NotNull Palette palette, int @NotNull [] dividers, int borderColor);
+
+    private record Frame(@NotNull Palette palette, @NotNull Card card) {}
 
     protected record Card(int left, int top, int right, int bottom, boolean accent, int origin) {
         public int accentLeft() {

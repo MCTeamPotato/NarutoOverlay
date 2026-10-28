@@ -21,3 +21,10 @@ type = "optional"
 versionRange = "[3.12.0,)"
 ordering = "AFTER"
 side = "CLIENT"
+
+[[dependencies.narutooverlay]]
+modId = "narutoui"
+type = "optional"
+versionRange = "[1.2.0,)"
+ordering = "AFTER"
+side = "CLIENT"

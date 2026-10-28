@@ -9,6 +9,7 @@
 
   "narutooverlay.config.cards.title": "卡片",
   "narutooverlay.config.cards.subtitle": "每张浮层卡片的开关、位置与字段",
+  "narutooverlay.config.cards.enabled": "启用",
   "narutooverlay.config.cards.position": "位置",
   "narutooverlay.config.cards.fields": "字段",
   "narutooverlay.config.cards.summary": "%s / %s 字段  ·  (%s, %s)",
@@ -91,6 +92,7 @@
   "narutooverlay.config.about.environment": "环境",
   "narutooverlay.config.about.clientOnly": "仅客户端",
   "narutooverlay.config.about.config": "配置文件",
+  "narutooverlay.config.about.path": "路径",
   "narutooverlay.config.about.copyPath": "复制路径",
   "narutooverlay.config.about.copied": "已复制",
   "narutooverlay.config.about.openFolder": "在资源管理器中打开",
