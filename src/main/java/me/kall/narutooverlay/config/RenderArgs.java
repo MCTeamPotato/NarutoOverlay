@@ -1,9 +1,9 @@
 package me.kall.narutooverlay.config;
 
 import me.kall.narutooverlay.card.CardRegistry;
-import me.kall.narutooverlay.event.fps.FpsCard;
-import me.kall.narutooverlay.event.gc.GcCard;
-import me.kall.narutooverlay.event.ram.RamCard;
+import me.kall.narutooverlay.card.impl.FpsCard;
+import me.kall.narutooverlay.card.impl.GcCard;
+import me.kall.narutooverlay.card.impl.RamCard;
 import me.kall.narutooverlay.theme.Palette;
 import me.kall.narutooverlay.theme.Theme;
 import net.minecraft.client.KeyMapping;

@@ -1,10 +1,10 @@
-package me.kall.narutooverlay.event.gc;
+package me.kall.narutooverlay.event;
 
 import com.sun.management.GarbageCollectionNotificationInfo;
 import com.sun.management.GcInfo;
-
 import javax.management.NotificationEmitter;
 import javax.management.openmbean.CompositeData;
+
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.time.Instant;

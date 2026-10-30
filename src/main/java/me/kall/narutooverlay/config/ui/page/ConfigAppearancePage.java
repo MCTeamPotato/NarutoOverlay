@@ -1,31 +1,30 @@
 package me.kall.narutooverlay.config.ui.page;
 
-import me.kall.narutoui.mui.MuiLocalization;
-
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.view.View;
-import icyllis.modernui.widget.Button;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.LinearLayout;
-import me.kall.narutoui.mui.MuiControls;
-import me.kall.narutoui.mui.MuiSettingsPage;
-import me.kall.narutoui.mui.MuiTheme;
-import me.kall.narutoui.mui.MuiThemePicker;
-import me.kall.narutoui.mui.shimmer.MuiShimmer;
-import me.kall.narutoui.mui.shimmer.MuiShimmerProfile;
-import me.kall.narutoui.mui.widget.MuiColorPickerOverlay;
-import me.kall.narutooverlay.config.ui.NarutoShimmerConfig;
 import me.kall.narutooverlay.config.ConfigSaver;
 import me.kall.narutooverlay.config.RenderArgs;
-import me.kall.narutooverlay.config.ui.ConfigUiHost;
+import me.kall.narutooverlay.config.ui.NarutoShimmerConfig;
 import me.kall.narutooverlay.config.ui.widget.Accent;
 import me.kall.narutooverlay.config.ui.widget.NarutoShimmerWidgetFactory;
 import me.kall.narutooverlay.theme.Palette;
 import me.kall.narutooverlay.theme.Theme;
 import me.kall.narutooverlay.theme.ValueLevel;
+import me.kall.narutoui.mui.overlay.MuiColorPickerOverlay;
+import me.kall.narutoui.mui.screen.MuiScreenHost;
+import me.kall.narutoui.mui.screen.MuiSettingsPage;
+import me.kall.narutoui.mui.shimmer.MuiShimmer;
+import me.kall.narutoui.mui.shimmer.MuiShimmerProfile;
+import me.kall.narutoui.mui.theme.MuiTheme;
+import me.kall.narutoui.mui.theme.MuiWidgetFactory;
+import me.kall.narutoui.mui.util.MuiLocalization;
+import me.kall.narutoui.mui.widget.MuiColorField;
+import me.kall.narutoui.mui.widget.MuiControls;
+import me.kall.narutoui.mui.widget.MuiThemePicker;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ public final class ConfigAppearancePage {
 
     private ConfigAppearancePage() {}
 
-    public static void populate(@NotNull MuiSettingsPage page, @Nullable ConfigUiHost host) {
+    public static void populate(@NotNull MuiSettingsPage page, @NotNull MuiScreenHost host) {
         themes(page, host);
 
         page.section(MuiLocalization.get(GROUP + "appearance.display"), section -> section
@@ -79,14 +78,14 @@ public final class ConfigAppearancePage {
         performance(page);
     }
 
-    private static void themes(@NotNull MuiSettingsPage page, @Nullable ConfigUiHost host) {
+    private static void themes(@NotNull MuiSettingsPage page, @NotNull MuiScreenHost host) {
         List<MuiThemePicker.Option> options = new ArrayList<>();
         for (Theme theme : Theme.values()) options.add(new ThemeOption(theme));
 
         MuiThemePicker.add(page, MuiLocalization.get(GROUP + "appearance.theme"), options,
                 MuiLocalization.get(GROUP + "appearance.inUse"), () -> {
                     ConfigSaver.changed();
-                    if (host != null) host.onThemeChanged();
+                    host.onThemeChanged();
                 });
     }
 
@@ -157,7 +156,7 @@ public final class ConfigAppearancePage {
                         }));
     }
 
-    private static void backplane(@NotNull MuiSettingsPage page, @Nullable ConfigUiHost host) {
+    private static void backplane(@NotNull MuiSettingsPage page, @NotNull MuiScreenHost host) {
         page.section(MuiLocalization.get(GROUP + "appearance.backplane"), section -> section
                 .slider(MuiLocalization.get(GROUP + "appearance.borderWidth"), 0, 400,
                         () -> (int) Math.round(RenderArgs.BACKPLANE_BORDER_WIDTH.get() * 100.0D),
@@ -176,23 +175,13 @@ public final class ConfigAppearancePage {
                 .custom(row -> addColorPicker(row, host)));
     }
 
-    private static void addColorPicker(@NotNull LinearLayout row, @Nullable ConfigUiHost host) {
+    private static void addColorPicker(@NotNull LinearLayout row, @NotNull MuiScreenHost host) {
         Context context = row.getContext();
         MuiTheme theme = MuiTheme.modern(context);
-        LinearLayout box = MuiControls.row(context);
-
-        View swatch = new View(context);
-        swatch.setBackground(swatch(context, RenderArgs.borderColor()));
-        LinearLayout.LayoutParams swatchParams = new LinearLayout.LayoutParams(MuiControls.dp(context, 26), MuiControls.dp(context, 26));
-        swatchParams.setMargins(0, 0, MuiControls.dp(context, 10), 0);
-        box.addView(swatch, swatchParams);
-
-        box.addView(MuiControls.text(context, theme,
-                MuiLocalization.get(GROUP + "appearance.borderColor"), 13, MuiTheme.modern(context).onSurface()), MuiControls.weight());
-
-        Button pick = MuiControls.button(context, theme,
-                MuiLocalization.get(GROUP + "appearance.pickColor"), true, view -> {
-                    if (host == null) return;
+        MuiColorField field = MuiColorField.create(context, theme,
+                        MuiLocalization.get(GROUP + "appearance.borderColor"), RenderArgs.borderColor())
+                .buttonLabel(MuiLocalization.get(GROUP + "appearance.pickColor"))
+                .onPick(() -> {
                     Context pickerContext = host.requireContext();
                     MuiShimmerProfile.withCurrent(NarutoShimmerConfig.profile(), () ->
                             MuiControls.withFactory(new NarutoShimmerWidgetFactory(), () ->
@@ -215,8 +204,7 @@ public final class ConfigAppearancePage {
                                                 host.reloadCurrentPage();
                                             }))));
                 });
-        box.addView(pick, MuiControls.wrap());
-        row.addView(box, MuiControls.fill());
+        row.addView(field, MuiControls.fill());
     }
 
     private static void performance(@NotNull MuiSettingsPage page) {
@@ -245,14 +233,6 @@ public final class ConfigAppearancePage {
                             RenderArgs.FPS_WINDOW.set(value);
                             ConfigSaver.changed();
                         }));
-    }
-
-    private static @NotNull ShapeDrawable swatch(@NotNull Context context, int color) {
-        ShapeDrawable drawable = new ShapeDrawable();
-        drawable.setCornerRadius(MuiControls.dp(context, 6));
-        drawable.setColor(color);
-        drawable.setStroke(Math.max(1, MuiControls.dp(context, 1)), 0x40FFFFFF);
-        return drawable;
     }
 
     private record ThemeOption(Theme theme) implements MuiThemePicker.Option {
@@ -284,28 +264,29 @@ public final class ConfigAppearancePage {
 
         @Override
         public @NotNull View preview(@NotNull Context context, @NotNull MuiTheme theme) {
-            Palette palette = this.theme.palette();
+            return MuiControls.withFactory(MuiWidgetFactory.modern(), () -> {
+                Palette palette = this.theme.palette();
 
-            FrameLayout preview = new FrameLayout(context);
-            ShapeDrawable background = new ShapeDrawable();
-            background.setCornerRadius(MuiControls.dp(context, 8));
-            background.setColor(palette.backplane());
-            background.setStroke(Math.max(1, MuiControls.dp(context, 1)), opaque(palette.border()));
-            preview.setBackground(background);
-            preview.setMinimumHeight(MuiControls.dp(context, 58));
+                FrameLayout preview = new FrameLayout(context);
+                ShapeDrawable background = new ShapeDrawable();
+                background.setCornerRadius(MuiControls.dp(context, 8));
+                background.setColor(palette.backplane());
+                background.setStroke(Math.max(1, MuiControls.dp(context, 1)), opaque(palette.border()));
+                preview.setBackground(background);
+                preview.setMinimumHeight(MuiControls.dp(context, 58));
 
-            LinearLayout lines = MuiControls.column(context);
-            lines.setPadding(MuiControls.dp(context, 7), MuiControls.dp(context, 7), MuiControls.dp(context, 7), MuiControls.dp(context, 7));
-            lines.addView(previewLine(context, "FPS ", "144", palette), MuiControls.fill());
-            lines.addView(previewLine(context, "RAM ", "8192/16384", palette), MuiControls.fill());
-            lines.addView(previewLine(context, "GC ", "12 ms", palette), MuiControls.fill());
+                LinearLayout lines = MuiControls.column(context);
+                lines.setPadding(MuiControls.dp(context, 7), MuiControls.dp(context, 7), MuiControls.dp(context, 7), MuiControls.dp(context, 7));
+                lines.addView(previewLine(context, "FPS ", "144", palette), MuiControls.fill());
+                lines.addView(previewLine(context, "RAM ", "8192/16384", palette), MuiControls.fill());
+                lines.addView(previewLine(context, "GC ", "12 ms", palette), MuiControls.fill());
 
-            preview.addView(lines, new FrameLayout.LayoutParams(MuiControls.MATCH, MuiControls.MATCH));
-            return preview;
+                preview.addView(lines, new FrameLayout.LayoutParams(MuiControls.MATCH, MuiControls.MATCH));
+                return preview;
+            });
         }
 
-        private static @NotNull LinearLayout previewLine(@NotNull Context context, @NotNull String label,
-                                                         @NotNull String value, @NotNull Palette palette) {
+        private static @NotNull LinearLayout previewLine(@NotNull Context context, @NotNull String label, @NotNull String value, @NotNull Palette palette) {
             LinearLayout line = MuiControls.row(context);
             line.setMinimumHeight(0);
             line.setPadding(0, 0, 0, 0);

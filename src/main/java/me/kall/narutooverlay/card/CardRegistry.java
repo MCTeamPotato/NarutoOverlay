@@ -6,9 +6,9 @@ import me.kall.narutooverlay.backplane.AbstractBackplane;
 import me.kall.narutooverlay.backplane.BackplaneRenderer;
 import me.kall.narutooverlay.config.RenderArgs;
 import me.kall.narutooverlay.text.TextLine;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import org.jetbrains.annotations.Contract;
@@ -95,9 +95,7 @@ public final class CardRegistry {
         }
 
         if (RenderArgs.DRAW_BACKPLANE.get()) {
-            int border = members.stream().anyMatch(CardRegistry::isSelected)
-                    ? 0xFFFFC42E
-                    : RenderArgs.borderColor();
+            int border = members.stream().anyMatch(CardRegistry::isSelected) ? 0xFFFFC42E : RenderArgs.borderColor();
             BackplaneRenderer.renderGroup(graphics, bounds.left(), bounds.top(),
                     bounds.right() - bounds.left(), bounds.bottom() - bounds.top(), separators, border);
         } else {

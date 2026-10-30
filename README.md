@@ -8,7 +8,7 @@
 
 NarutoOverlay 是一个面向 **Minecraft 1.20.1 Forge** 的客户端 HUD 信息模组。它默认只显示瞬时帧率、半透明背板和文字流光，其他信息（最低/平均/1% 低帧、GC、内存）都可以在游戏内配置界面按需打开。
 
-配置界面通过可选的 [NarutoUI](https://www.curseforge.com/minecraft/mc-mods/narutoui) 提供的 Modern UI API 构建；安装 **NarutoUI 1.0.0+** 和 [ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui) 后可以打开可视化配置界面，不安装时 HUD 仍可正常使用。
+配置界面通过可选的 [NarutoUI](https://www.curseforge.com/minecraft/mc-mods/narutoui) 提供的 Modern UI API 构建；安装 **NarutoUI 1.4.0+** 和 [ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui) 后可以打开可视化配置界面，不安装时 HUD 仍可正常使用。
 
 ---
 ## 特点
@@ -222,7 +222,7 @@ HUD 的流光只在游戏内 HUD 渲染时运行；配置界面的流光只在�
 ## 常见问题
 
 **Q：配置界面打不开 / 没有 Config 按钮？**  
-A：确认已安装 NarutoUI 1.0.0+ 和 ModernUI 3.12.0+。它们是可选的配置界面依赖，不影响 HUD 本体。
+A：确认已安装 NarutoUI 1.4.0+ 和 ModernUI 3.12.0+。它们是可选的配置界面依赖，不影响 HUD 本体。
 
 **Q：文字流光没有效果？**  
 A：确认主题是 NARUTO、总开关和对应类别开关已打开、颜色强度大于 0；CLASSIC 主题下流光不可用。

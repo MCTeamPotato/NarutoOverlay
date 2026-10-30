@@ -1,13 +1,14 @@
 package me.kall.narutooverlay.config.ui.background;
 
+import me.kall.narutooverlay.config.ConfigSaver;
 import me.kall.narutooverlay.config.RenderArgs;
 import net.minecraftforge.fml.loading.FMLPaths;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -61,6 +62,21 @@ public final class BundledBackgrounds {
 
     public static boolean available() {
         return !files().isEmpty();
+    }
+
+    /**
+     * Moves an old default single-image configuration over to the bundled slideshow folder.
+     * Only touches the exact legacy default, so custom images and folders are left alone.
+     */
+    public static void migrateLegacyDefault() {
+        if (!available()) return;
+        if (!RenderArgs.BACKGROUND_FOLDER.get().isBlank()) return;
+        if (!"narutooverlay-config-bg.png".equals(RenderArgs.BACKGROUND_IMAGE.get())) return;
+
+        RenderArgs.BACKGROUND_FOLDER.set(FOLDER);
+        RenderArgs.BACKGROUND_ORDER.set(new ArrayList<>(NAMES));
+        RenderArgs.BACKGROUND_IMAGE.set(RenderArgs.DEFAULT_BACKGROUND_IMAGE);
+        ConfigSaver.changed();
     }
 
     private static void copy(@NotNull Asset asset, @NotNull Path target) {

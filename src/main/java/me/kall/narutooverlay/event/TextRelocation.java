@@ -4,9 +4,9 @@ import com.mojang.blaze3d.platform.Window;
 import me.kall.narutooverlay.card.Card;
 import me.kall.narutooverlay.card.CardRegistry;
 import me.kall.narutooverlay.config.ConfigSaver;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
 import org.jetbrains.annotations.NotNull;
@@ -101,11 +101,11 @@ public class TextRelocation {
     }
 
     public static void release(InputEvent.MouseButton.@NotNull Pre event) {
-        if (!isLeftMouse(event, GLFW.GLFW_RELEASE)) return;
-
-        if (dragging != null) {
-            ConfigSaver.changed();
-            dragging = null;
+        if (isLeftMouse(event, GLFW.GLFW_RELEASE)) {
+            if (dragging != null) {
+                ConfigSaver.changed();
+                dragging = null;
+            }
         }
     }
 

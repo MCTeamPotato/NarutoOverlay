@@ -1,9 +1,9 @@
 package me.kall.narutooverlay.config.ui;
 
-import me.kall.narutoui.mui.shimmer.MuiShimmerConfig;
-import me.kall.narutoui.mui.shimmer.MuiShimmerProfile;
 import me.kall.narutooverlay.config.RenderArgs;
 import me.kall.narutooverlay.theme.Palette;
+import me.kall.narutoui.mui.shimmer.MuiShimmerConfig;
+import me.kall.narutoui.mui.shimmer.MuiShimmerProfile;
 import org.jetbrains.annotations.NotNull;
 
 /**

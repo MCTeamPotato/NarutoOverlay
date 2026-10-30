@@ -1,9 +1,10 @@
-package me.kall.narutooverlay.event.ram;
+package me.kall.narutooverlay.event;
 
 import it.unimi.dsi.fastutil.longs.Long2LongFunction;
 import me.kall.narutooverlay.config.RenderArgs;
-import me.kall.narutooverlay.event.api.TaskRegistryEvent;
+import me.kall.narutooverlay.event.api.*;
 import me.kall.narutooverlay.event.api.RAMUpdateEvent;
+import me.kall.narutooverlay.event.api.TaskRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
 import org.jetbrains.annotations.NotNull;
 

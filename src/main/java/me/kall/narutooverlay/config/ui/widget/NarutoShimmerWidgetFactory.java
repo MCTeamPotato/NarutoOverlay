@@ -6,8 +6,8 @@ import icyllis.modernui.widget.Button;
 import icyllis.modernui.widget.SeekBar;
 import icyllis.modernui.widget.Switch;
 import icyllis.modernui.widget.TextView;
-import me.kall.narutoui.mui.MuiTheme;
-import me.kall.narutoui.mui.MuiWidgetFactory;
+import me.kall.narutoui.mui.theme.MuiTheme;
+import me.kall.narutoui.mui.theme.MuiWidgetFactory;
 import org.jetbrains.annotations.NotNull;
 
 /**

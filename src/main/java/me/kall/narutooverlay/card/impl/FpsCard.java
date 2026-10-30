@@ -1,4 +1,4 @@
-package me.kall.narutooverlay.event.fps;
+package me.kall.narutooverlay.card.impl;
 
 import me.kall.narutooverlay.card.Card;
 import me.kall.narutooverlay.card.Field;
@@ -9,11 +9,10 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.common.ForgeConfigSpec;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.function.ToDoubleFunction;
+import java.util.List;
 
-import static me.kall.narutooverlay.util.Texts.label;
-import static me.kall.narutooverlay.util.Texts.value;
+import static me.kall.narutooverlay.util.Texts.*;
 
 public final class FpsCard extends Card<FpsUpdateEvent> {
     private static final String FPS_SAMPLE = "0000";

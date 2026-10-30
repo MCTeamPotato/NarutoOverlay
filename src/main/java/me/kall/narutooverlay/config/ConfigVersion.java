@@ -4,6 +4,7 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+@SuppressWarnings("unused")
 public final class ConfigVersion {
     private static final AtomicInteger VERSION = new AtomicInteger();
 

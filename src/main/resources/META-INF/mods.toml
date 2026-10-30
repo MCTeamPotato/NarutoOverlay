@@ -25,6 +25,6 @@ side = "CLIENT"
 [[dependencies.narutooverlay]]
 modId = "narutoui"
 mandatory = false
-versionRange = "[1.2.0,)"
+versionRange = "[1.4.0,)"
 ordering = "AFTER"
 side = "CLIENT"

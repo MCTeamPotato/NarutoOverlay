@@ -32,6 +32,12 @@ loom {
 }
 
 repositories {
+    // Local development builds of NarutoUI are published here together with their sources and
+    // javadoc jars (deps/maven/me/kall/narutoui/<version>).
+    maven {
+        name = 'narutouiLocal'
+        url = uri('deps/maven')
+    }
     maven { url = 'https://files.minecraftforge.net/maven/' }
     maven { url = 'https://maven.neoforged.net/releases' }
     maven { url = 'https://maven.parchmentmc.org' }
@@ -40,8 +46,8 @@ repositories {
 }
 
 def versions = [
-        "1.20.1": [forge: "47.4.28", parchment: "2023.09.03", java: 17, mui: "3.12.0", nui: "9341603;9341605;9341606"],
-        "1.21.1": [neo: "21.1.259",  parchment: "2024.11.17", java: 21, mui: "3.13.0", nui: ""]
+        "1.20.1": [forge: "47.4.28", parchment: "2023.09.03", java: 17, mui: "3.12.0", narutoui: "1.4.0"],
+        "1.21.1": [neo: "21.1.259",  parchment: "2024.11.17", java: 21, mui: "3.13.0"]
 ]
 
 def versionKeys = versions[minecraft_version]
@@ -58,15 +64,14 @@ dependencies {
         forge "net.minecraftforge:forge:${minecraft_version}-${versionKeys.forge}"
         implementation "icyllis.modernui:ModernUI-Core:${versionKeys.mui}"
         modImplementation("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${versionKeys.mui}.+")
+        // Resolved as a Maven module from deps/maven so that Loom also remaps and caches the matching
+        // sources jar, which is what lets the IDE attach sources (and the javadoc jar next to it).
+        modImplementation "me.kall.narutoui:narutoui:${minecraft_version}-${versionKeys.narutoui}"
     } else {
         neoForge "net.neoforged:neoforge:${versionKeys.neo}"
         implementation "dev.icyllis:modernui-core:${versionKeys.mui}"
         modImplementation("icyllis.modernui:ModernUI-NeoForge:${minecraft_version}-${versionKeys.mui}.+")
     }
-
-    String nui = versionKeys.nui
-    String[] parts = nui.split(";")
-    modImplementation("curse.maven:narutoui-1766942:${parts[0]}-sources-${parts[1]}-javadoc-${parts[2]}")
 
     if (!isNeo && hasMixin) {
         shadow(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.5"))

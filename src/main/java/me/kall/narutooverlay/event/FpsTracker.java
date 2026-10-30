@@ -1,8 +1,9 @@
-package me.kall.narutooverlay.event.fps;
+package me.kall.narutooverlay.event;
 
 import me.kall.narutooverlay.config.RenderArgs;
-import me.kall.narutooverlay.event.api.TaskRegistryEvent;
+import me.kall.narutooverlay.event.api.*;
 import me.kall.narutooverlay.event.api.FpsUpdateEvent;
+import me.kall.narutooverlay.event.api.TaskRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import org.jetbrains.annotations.NotNull;

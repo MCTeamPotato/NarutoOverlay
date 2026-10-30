@@ -8,7 +8,7 @@
 
 NarutoOverlay is a **client-side HUD information mod for Minecraft 1.20.1 Forge**. By default it only shows the instantaneous FPS, a translucent backplane and a text shimmer. Everything else — minimum / average / 1% low FPS, GC and memory information — can be enabled in the in-game configuration screen.
 
-The configuration screen is built with the optional Modern UI API provided by [NarutoUI](https://www.curseforge.com/minecraft/mc-mods/narutoui). Install **NarutoUI 1.0.0+** and [ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui) to open it; the HUD works without them.
+The configuration screen is built with the optional Modern UI API provided by [NarutoUI](https://www.curseforge.com/minecraft/mc-mods/narutoui). Install **NarutoUI 1.4.0+** and [ModernUI](https://www.curseforge.com/minecraft/mc-mods/modern-ui) to open it; the HUD works without them.
 
 ---
 
@@ -229,7 +229,7 @@ HUD shimmer only runs while the in-game HUD is rendered. Configuration screen sh
 ## FAQ
 
 **Q: The configuration screen is missing or there is no Config button.**  
-A: Install NarutoUI 1.0.0+ and ModernUI 3.12.0+. They are optional configuration-screen dependencies; the HUD itself does not require them.
+A: Install NarutoUI 1.4.0+ and ModernUI 3.12.0+. They are optional configuration-screen dependencies; the HUD itself does not require them.
 
 **Q: The text shimmer is not visible.**  
 A: Make sure the theme is NARUTO, the master switch and the relevant category switches are enabled, and color strength is greater than 0. The shimmer is unavailable in CLASSIC.

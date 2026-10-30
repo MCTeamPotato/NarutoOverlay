@@ -1,9 +1,10 @@
-package me.kall.narutooverlay.event.gc;
+package me.kall.narutooverlay.card.impl;
 
 import me.kall.narutooverlay.card.Card;
 import me.kall.narutooverlay.card.Field;
 import me.kall.narutooverlay.config.RenderArgs;
 import me.kall.narutooverlay.event.api.TaskRegistryEvent;
+import me.kall.narutooverlay.event.GCTracker;
 import me.kall.narutooverlay.text.TextLine;
 import me.kall.narutooverlay.util.Formats;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -13,9 +14,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
-import static me.kall.narutooverlay.util.Texts.label;
-import static me.kall.narutooverlay.util.Texts.unit;
-import static me.kall.narutooverlay.util.Texts.value;
+import static me.kall.narutooverlay.util.Texts.*;
 
 public final class GcCard extends Card<GcCard.Snapshot> {
     public record Snapshot(@NotNull String name, long cost, @NotNull Formats.Quantity elapsed) {}

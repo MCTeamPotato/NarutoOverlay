@@ -1,4 +1,4 @@
-package me.kall.narutooverlay.event.ram;
+package me.kall.narutooverlay.card.impl;
 
 import me.kall.narutooverlay.card.Card;
 import me.kall.narutooverlay.card.Field;
@@ -11,10 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-import static me.kall.narutooverlay.util.Texts.label;
-import static me.kall.narutooverlay.util.Texts.separator;
-import static me.kall.narutooverlay.util.Texts.unit;
-import static me.kall.narutooverlay.util.Texts.value;
+import static me.kall.narutooverlay.util.Texts.*;
 
 public final class RamCard extends Card<RAMUpdateEvent> {
     private static final String PERCENT_SAMPLE = "100%";

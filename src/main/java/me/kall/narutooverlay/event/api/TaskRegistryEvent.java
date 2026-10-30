@@ -6,9 +6,9 @@ import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.fml.event.IModBusEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
+import java.util.List;
 
 public final class TaskRegistryEvent extends Event implements IModBusEvent {
     public static final TaskRegistryEvent INSTANCE = new TaskRegistryEvent();
