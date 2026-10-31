@@ -20,9 +20,9 @@ import me.kall.narutoui.mui.shimmer.MuiShimmer;
 import me.kall.narutoui.mui.shimmer.MuiShimmerProfile;
 import me.kall.narutoui.mui.theme.MuiTheme;
 import me.kall.narutoui.mui.theme.MuiWidgetFactory;
-import me.kall.narutoui.mui.util.MuiLocalization;
 import me.kall.narutoui.mui.widget.MuiColorField;
 import me.kall.narutoui.mui.widget.MuiControls;
+import me.kall.narutoui.mui.widget.MuiLayout;
 import me.kall.narutoui.mui.widget.MuiThemePicker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
@@ -42,34 +42,24 @@ public final class ConfigAppearancePage {
     public static void populate(@NotNull MuiSettingsPage page, @NotNull MuiScreenHost host) {
         themes(page, host);
 
-        page.section(MuiLocalization.get(GROUP + "appearance.display"), section -> section
-                .toggle(MuiLocalization.get(GROUP + "appearance.dropShadow"),
-                        MuiLocalization.get(GROUP + "appearance.dropShadow.desc"),
+        page.section(GROUP + "appearance.display", section -> section
+                .toggle(GROUP + "appearance.dropShadow",
+                        GROUP + "appearance.dropShadow.desc",
                         RenderArgs.DROP_SHADOW::get,
-                        value -> {
-                            RenderArgs.DROP_SHADOW.set(value);
-                            ConfigSaver.changed();
-                        })
-                .toggle(MuiLocalization.get(GROUP + "appearance.equalWidth"),
-                        MuiLocalization.get(GROUP + "appearance.equalWidth.desc"),
+                        value -> RenderArgs.set(RenderArgs.DROP_SHADOW, value))
+                .toggle(GROUP + "appearance.equalWidth",
+                        GROUP + "appearance.equalWidth.desc",
                         RenderArgs.EQUAL_WIDTH::get,
-                        value -> {
-                            RenderArgs.EQUAL_WIDTH.set(value);
-                            ConfigSaver.changed();
-                        })
-                .toggle(MuiLocalization.get(GROUP + "appearance.drawBackplane"),
-                        MuiLocalization.get(GROUP + "appearance.drawBackplane.desc"),
+                        value -> RenderArgs.set(RenderArgs.EQUAL_WIDTH, value))
+                .toggle(GROUP + "appearance.drawBackplane",
+                        GROUP + "appearance.drawBackplane.desc",
                         RenderArgs.DRAW_BACKPLANE::get,
-                        value -> {
-                            RenderArgs.DRAW_BACKPLANE.set(value);
-                            ConfigSaver.changed();
-                        })
-                .toggle(MuiLocalization.get(GROUP + "appearance.textShimmer"),
-                        MuiLocalization.get(GROUP + "appearance.textShimmer.desc"),
+                        value -> RenderArgs.set(RenderArgs.DRAW_BACKPLANE, value))
+                .toggle(GROUP + "appearance.textShimmer",
+                        GROUP + "appearance.textShimmer.desc",
                         RenderArgs.TEXT_SHIMMER::get,
                         value -> {
-                            RenderArgs.TEXT_SHIMMER.set(value);
-                            ConfigSaver.changed();
+                            RenderArgs.set(RenderArgs.TEXT_SHIMMER, value);
                             MuiShimmer.refresh();
                         }));
 
@@ -82,163 +72,98 @@ public final class ConfigAppearancePage {
         List<MuiThemePicker.Option> options = new ArrayList<>();
         for (Theme theme : Theme.values()) options.add(new ThemeOption(theme));
 
-        MuiThemePicker.add(page, MuiLocalization.get(GROUP + "appearance.theme"), options,
-                MuiLocalization.get(GROUP + "appearance.inUse"), () -> {
-                    ConfigSaver.changed();
-                    host.onThemeChanged();
-                });
+        MuiThemePicker.add(page, GROUP + "appearance.theme", options, GROUP + "appearance.inUse", host::onThemeChanged);
     }
 
     private static void shimmer(@NotNull MuiSettingsPage page) {
-        page.section(MuiLocalization.get(GROUP + "appearance.shimmer"), section -> section
-                .toggle(MuiLocalization.get(GROUP + "appearance.shimmerHud"),
-                        MuiLocalization.get(GROUP + "appearance.shimmerHud.desc"),
+        page.section(GROUP + "appearance.shimmer", section -> section
+                .toggle(GROUP + "appearance.shimmerHud",
+                        GROUP + "appearance.shimmerHud.desc",
                         RenderArgs.HUD_TEXT_SHIMMER::get,
-                        value -> {
-                            RenderArgs.HUD_TEXT_SHIMMER.set(value);
-                            ConfigSaver.changed();
-                        })
-                .toggle(MuiLocalization.get(GROUP + "appearance.shimmerConfig"),
-                        MuiLocalization.get(GROUP + "appearance.shimmerConfig.desc"),
+                        value -> RenderArgs.set(RenderArgs.HUD_TEXT_SHIMMER, value))
+                .toggle(GROUP + "appearance.shimmerConfig",
+                        GROUP + "appearance.shimmerConfig.desc",
                         RenderArgs.CONFIG_TEXT_SHIMMER::get,
                         value -> {
-                            RenderArgs.CONFIG_TEXT_SHIMMER.set(value);
-                            ConfigSaver.changed();
+                            RenderArgs.set(RenderArgs.CONFIG_TEXT_SHIMMER, value);
                             MuiShimmer.refresh();
                         })
-                .toggle(MuiLocalization.get(GROUP + "appearance.shimmerControls"),
-                        MuiLocalization.get(GROUP + "appearance.shimmerControls.desc"),
+                .toggle(GROUP + "appearance.shimmerControls",
+                        GROUP + "appearance.shimmerControls.desc",
                         RenderArgs.CONTROL_SHIMMER::get,
                         value -> {
-                            RenderArgs.CONTROL_SHIMMER.set(value);
-                            ConfigSaver.changed();
+                            RenderArgs.set(RenderArgs.CONTROL_SHIMMER, value);
                             MuiShimmer.refresh();
                         })
-                .slider(MuiLocalization.get(GROUP + "appearance.shimmerSpeed"), 2, 30,
+                .slider(GROUP + "appearance.shimmerSpeed", 2, 30,
                         () -> (int) Math.round(RenderArgs.TEXT_SHIMMER_SPEED.get() * 10.0D),
-                        value -> {
-                            RenderArgs.TEXT_SHIMMER_SPEED.set(value / 10.0D);
-                            ConfigSaver.changed();
-                        },
+                        value -> RenderArgs.set(RenderArgs.TEXT_SHIMMER_SPEED, value / 10.0D),
                         value -> String.format(Locale.ROOT, "%.1fx", value / 10.0D))
-                .slider(MuiLocalization.get(GROUP + "appearance.shimmerDensity"), 2, 30,
+                .slider(GROUP + "appearance.shimmerDensity", 2, 30,
                         () -> (int) Math.round(RenderArgs.TEXT_SHIMMER_SCALE.get() * 10.0D),
-                        value -> {
-                            RenderArgs.TEXT_SHIMMER_SCALE.set(value / 10.0D);
-                            ConfigSaver.changed();
-                        },
+                        value -> RenderArgs.set(RenderArgs.TEXT_SHIMMER_SCALE, value / 10.0D),
                         value -> String.format(Locale.ROOT, "%.1fx", value / 10.0D))
-                .slider(MuiLocalization.get(GROUP + "appearance.shimmerStrength"), 0, 100,
+                .slider(GROUP + "appearance.shimmerStrength", 0, 100,
                         () -> (int) Math.round(RenderArgs.TEXT_SHIMMER_STRENGTH.get() * 100.0D),
-                        value -> {
-                            RenderArgs.TEXT_SHIMMER_STRENGTH.set(value / 100.0D);
-                            ConfigSaver.changed();
-                        },
+                        value -> RenderArgs.set(RenderArgs.TEXT_SHIMMER_STRENGTH, value / 100.0D),
                         value -> value + "%")
-                .slider(MuiLocalization.get(GROUP + "appearance.shimmerFps"), 5, 240,
+                .slider(GROUP + "appearance.shimmerFps", 5, 240,
                         RenderArgs.TEXT_SHIMMER_FPS::get,
-                        value -> {
-                            RenderArgs.TEXT_SHIMMER_FPS.set(value);
-                            ConfigSaver.changed();
-                        })
-                .slider(MuiLocalization.get(GROUP + "appearance.configShimmerFps"), 5, 120,
+                        value -> RenderArgs.set(RenderArgs.TEXT_SHIMMER_FPS, value))
+                .slider(GROUP + "appearance.configShimmerFps", 5, 120,
                         RenderArgs.CONFIG_SHIMMER_FPS::get,
-                        value -> {
-                            RenderArgs.CONFIG_SHIMMER_FPS.set(value);
-                            ConfigSaver.changed();
-                        })
-                .toggle(MuiLocalization.get(GROUP + "appearance.shimmerCache"),
-                        MuiLocalization.get(GROUP + "appearance.shimmerCache.desc"),
+                        value -> RenderArgs.set(RenderArgs.CONFIG_SHIMMER_FPS, value))
+                .toggle(GROUP + "appearance.shimmerCache",
+                        GROUP + "appearance.shimmerCache.desc",
                         RenderArgs.TEXT_SHIMMER_CACHE::get,
-                        value -> {
-                            RenderArgs.TEXT_SHIMMER_CACHE.set(value);
-                            ConfigSaver.changed();
-                        }));
+                        value -> RenderArgs.set(RenderArgs.TEXT_SHIMMER_CACHE, value)));
     }
 
     private static void backplane(@NotNull MuiSettingsPage page, @NotNull MuiScreenHost host) {
-        page.section(MuiLocalization.get(GROUP + "appearance.backplane"), section -> section
-                .slider(MuiLocalization.get(GROUP + "appearance.borderWidth"), 0, 400,
+        page.section(GROUP + "appearance.backplane", section -> section
+                .slider(GROUP + "appearance.borderWidth", 0, 400,
                         () -> (int) Math.round(RenderArgs.BACKPLANE_BORDER_WIDTH.get() * 100.0D),
-                        value -> {
-                            RenderArgs.BACKPLANE_BORDER_WIDTH.set(value / 100.0D);
-                            ConfigSaver.changed();
-                        },
+                        value -> RenderArgs.set(RenderArgs.BACKPLANE_BORDER_WIDTH, value / 100.0D),
                         value -> String.format(Locale.ROOT, "%.2f", value / 100.0D))
-                .toggle(MuiLocalization.get(GROUP + "appearance.borderOverride"),
-                        MuiLocalization.get(GROUP + "appearance.borderOverride.desc"),
+                .toggle(GROUP + "appearance.borderOverride",
+                        GROUP + "appearance.borderOverride.desc",
                         RenderArgs.BACKPLANE_BORDER_OVERRIDE::get,
-                        value -> {
-                            RenderArgs.BACKPLANE_BORDER_OVERRIDE.set(value);
-                            ConfigSaver.changed();
-                        })
-                .custom(row -> addColorPicker(row, host)));
+                        value -> RenderArgs.set(RenderArgs.BACKPLANE_BORDER_OVERRIDE, value))
+                .customLayout(row -> addColorPicker(row, host)));
     }
 
-    private static void addColorPicker(@NotNull LinearLayout row, @NotNull MuiScreenHost host) {
+    private static void addColorPicker(@NotNull MuiLayout row, @NotNull MuiScreenHost host) {
         Context context = row.getContext();
-        MuiTheme theme = MuiTheme.modern(context);
-        MuiColorField field = MuiColorField.create(context, theme,
-                        MuiLocalization.get(GROUP + "appearance.borderColor"), RenderArgs.borderColor())
-                .buttonLabel(MuiLocalization.get(GROUP + "appearance.pickColor"))
+        row.add(MuiColorField.create(context, MuiTheme.modern(context), GROUP + "appearance.borderColor", RenderArgs.borderColor())
+                .buttonLabel(GROUP + "appearance.pickColor")
                 .onPick(() -> {
                     Context pickerContext = host.requireContext();
                     MuiShimmerProfile.withCurrent(NarutoShimmerConfig.profile(), () ->
-                            MuiControls.withFactory(new NarutoShimmerWidgetFactory(), () ->
-                                    host.showOverlay(new MuiColorPickerOverlay(pickerContext,
-                                            MuiTheme.modern(pickerContext).withPrimary(Accent.primary()),
-                                            RenderArgs.borderColor(),
-                                            new MuiColorPickerOverlay.Labels(
-                                                    MuiLocalization.get(GROUP + "color.title"),
-                                                    MuiLocalization.get(GROUP + "color.brightness"),
-                                                    MuiLocalization.get(GROUP + "color.alpha"),
-                                                    MuiLocalization.get(GROUP + "color.apply"),
-                                                    MuiLocalization.get(GROUP + "color.cancel")),
-                                            argb -> {
-                                                RenderArgs.BACKPLANE_BORDER_OVERRIDE.set(true);
-                                                RenderArgs.BACKPLANE_BORDER_RED.set((argb >> 16) & 0xFF);
-                                                RenderArgs.BACKPLANE_BORDER_GREEN.set((argb >> 8) & 0xFF);
-                                                RenderArgs.BACKPLANE_BORDER_BLUE.set(argb & 0xFF);
-                                                RenderArgs.BACKPLANE_BORDER_ALPHA.set((argb >>> 24) & 0xFF);
-                                                ConfigSaver.changed();
-                                                host.reloadCurrentPage();
-                                            }))));
-                });
-        row.addView(field, MuiControls.fill());
+                            MuiControls.withFactory(NarutoShimmerWidgetFactory.INSTANCE, () -> host.showOverlay(new MuiColorPickerOverlay(pickerContext, MuiTheme.modern(pickerContext).withPrimary(Accent.primary()), RenderArgs.borderColor(), new MuiColorPickerOverlay.Labels(GROUP + "color.title", GROUP + "color.brightness", GROUP + "color.alpha", GROUP + "color.apply", GROUP + "color.cancel"), argb -> {
+                                RenderArgs.BACKPLANE_BORDER_OVERRIDE.set(true);
+                                RenderArgs.BACKPLANE_BORDER_RED.set((argb >> 16) & 0xFF);
+                                RenderArgs.BACKPLANE_BORDER_GREEN.set((argb >> 8) & 0xFF);
+                                RenderArgs.BACKPLANE_BORDER_BLUE.set(argb & 0xFF);
+                                RenderArgs.BACKPLANE_BORDER_ALPHA.set((argb >>> 24) & 0xFF);
+                                ConfigSaver.changed();
+                                host.reloadCurrentPage();
+                            }))));
+                }), MuiControls.fill());
     }
 
     private static void performance(@NotNull MuiSettingsPage page) {
-        page.section(MuiLocalization.get(GROUP + "appearance.performance"), section -> section
-                .slider(MuiLocalization.get(GROUP + "appearance.fpsInterval"), 1, 200,
-                        RenderArgs.FPS_COOLDOWN::get,
-                        value -> {
-                            RenderArgs.FPS_COOLDOWN.set(value);
-                            ConfigSaver.changed();
-                        })
-                .slider(MuiLocalization.get(GROUP + "appearance.gcInterval"), 1, 200,
-                        RenderArgs.GC_COOLDOWN::get,
-                        value -> {
-                            RenderArgs.GC_COOLDOWN.set(value);
-                            ConfigSaver.changed();
-                        })
-                .slider(MuiLocalization.get(GROUP + "appearance.ramInterval"), 1, 200,
-                        RenderArgs.RAM_COOLDOWN::get,
-                        value -> {
-                            RenderArgs.RAM_COOLDOWN.set(value);
-                            ConfigSaver.changed();
-                        })
-                .slider(MuiLocalization.get(GROUP + "appearance.fpsWindow"), 10, 1000,
-                        RenderArgs.FPS_WINDOW::get,
-                        value -> {
-                            RenderArgs.FPS_WINDOW.set(value);
-                            ConfigSaver.changed();
-                        }));
+        page.section(GROUP + "appearance.performance", section -> section
+                .slider(GROUP + "appearance.fpsInterval", 1, 200, RenderArgs.FPS_COOLDOWN::get, value -> RenderArgs.set(RenderArgs.FPS_COOLDOWN, value))
+                .slider(GROUP + "appearance.gcInterval", 1, 200, RenderArgs.GC_COOLDOWN::get, value -> RenderArgs.set(RenderArgs.GC_COOLDOWN, value))
+                .slider(GROUP + "appearance.ramInterval", 1, 200, RenderArgs.RAM_COOLDOWN::get, value -> RenderArgs.set(RenderArgs.RAM_COOLDOWN, value))
+                .slider(GROUP + "appearance.fpsWindow", 10, 1000, RenderArgs.FPS_WINDOW::get, value -> RenderArgs.set(RenderArgs.FPS_WINDOW, value))
+        );
     }
 
     private record ThemeOption(Theme theme) implements MuiThemePicker.Option {
         @Override
         public @NotNull @Unmodifiable CharSequence title() {
-            return MuiLocalization.get(GROUP + "theme." + this.theme.name().toLowerCase(Locale.ROOT));
+            return GROUP + "theme." + this.theme.name().toLowerCase(Locale.ROOT);
         }
 
         @Override

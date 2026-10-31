@@ -33,7 +33,7 @@ loom {
 
 repositories {
     // Local development builds of NarutoUI are published here together with their sources and
-    // javadoc jars (deps/maven/me/kall/narutoui/<version>).
+    // javadoc jars (deps/maven/me/kall/narutoui/narutoui/<version>).
     maven {
         name = 'narutouiLocal'
         url = uri('deps/maven')
@@ -64,8 +64,6 @@ dependencies {
         forge "net.minecraftforge:forge:${minecraft_version}-${versionKeys.forge}"
         implementation "icyllis.modernui:ModernUI-Core:${versionKeys.mui}"
         modImplementation("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${versionKeys.mui}.+")
-        // Resolved as a Maven module from deps/maven so that Loom also remaps and caches the matching
-        // sources jar, which is what lets the IDE attach sources (and the javadoc jar next to it).
         modImplementation "me.kall.narutoui:narutoui:${minecraft_version}-${versionKeys.narutoui}"
     } else {
         neoForge "net.neoforged:neoforge:${versionKeys.neo}"

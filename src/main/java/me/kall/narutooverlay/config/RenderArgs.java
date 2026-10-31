@@ -265,6 +265,11 @@ public final class RenderArgs {
         ConfigSaver.tick();
     }
 
+    public static <T> void set(ForgeConfigSpec.@NotNull ConfigValue<T> config, T value) {
+        config.set(value);
+        ConfigSaver.changed();
+    }
+
     public static @NotNull Palette palette() {
         return THEME.get().palette();
     }

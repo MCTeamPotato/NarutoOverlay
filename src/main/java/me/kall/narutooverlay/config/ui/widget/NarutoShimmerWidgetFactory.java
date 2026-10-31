@@ -19,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
 public final class NarutoShimmerWidgetFactory implements MuiWidgetFactory {
     private static final MuiWidgetFactory SHIMMER = MuiWidgetFactory.shimmer();
 
+    public static final NarutoShimmerWidgetFactory INSTANCE = new NarutoShimmerWidgetFactory();
+
     private static @NotNull MuiTheme naruto(@NotNull MuiTheme theme) {
         return theme.withPrimary(Accent.primary()).withOnPrimary(0xFF000000);
     }

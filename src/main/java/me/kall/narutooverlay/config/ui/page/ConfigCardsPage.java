@@ -14,7 +14,6 @@ import me.kall.narutoui.mui.screen.MuiPageContext;
 import me.kall.narutoui.mui.screen.MuiScreenHost;
 import me.kall.narutoui.mui.screen.MuiSettingsPage;
 import me.kall.narutoui.mui.theme.MuiTheme;
-import me.kall.narutoui.mui.util.MuiLocalization;
 import me.kall.narutoui.mui.widget.MuiChip;
 import me.kall.narutoui.mui.widget.MuiCollapsibleCard;
 import me.kall.narutoui.mui.widget.MuiControls;
@@ -68,12 +67,11 @@ public final class ConfigCardsPage {
         void render() {
             for (Card<?> card : CardRegistry.all()) {
                 CardView view = new CardView(this, card);
-                this.content.add(view.view(), cardParams());
+                this.content.add(view.view(), this.cardParams());
             }
 
-            MuiTextAction resetAll = MuiTextAction.create(this.context, this.theme,
-                    loc("resetAll"), this::resetAll);
-            this.content.add(resetAll, resetAllParams());
+            MuiTextAction resetAll = MuiTextAction.create(this.context, this.theme, loc("resetAll"), this::resetAll);
+            this.content.add(resetAll, this.resetAllParams());
         }
 
         void changed() {
@@ -91,17 +89,14 @@ public final class ConfigCardsPage {
         }
 
         private @NotNull LinearLayout.LayoutParams cardParams() {
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    MuiControls.MATCH, MuiControls.WRAP);
-            params.setMargins(0, this.first ? dp(this.context, CARD_TOP_MARGIN) : 0, 0,
-                    dp(this.context, CARD_BOTTOM_MARGIN));
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(MuiControls.MATCH, MuiControls.WRAP);
+            params.setMargins(0, this.first ? dp(this.context, CARD_TOP_MARGIN) : 0, 0, dp(this.context, CARD_BOTTOM_MARGIN));
             this.first = false;
             return params;
         }
 
         private @NotNull LinearLayout.LayoutParams resetAllParams() {
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    MuiControls.WRAP, MuiControls.WRAP);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(MuiControls.WRAP, MuiControls.WRAP);
             params.topMargin = dp(this.context, 20);
             return params;
         }
@@ -126,15 +121,10 @@ public final class ConfigCardsPage {
             this.theme = parent.theme;
             this.card = card;
 
-            this.box = MuiCollapsibleCard.card(this.context, this.theme,
-                    cardName(card), summary(card), false);
+            this.box = MuiCollapsibleCard.card(this.context, this.theme, cardName(card), summary(card), false);
             this.body = this.box.body();
-            this.x = MuiNumberField.create(this.context, this.theme, card.leftValue().get())
-                    .bounds(0, Integer.MAX_VALUE)
-                    .gravity(Gravity.CENTER);
-            this.y = MuiNumberField.create(this.context, this.theme, card.topValue().get())
-                    .bounds(0, Integer.MAX_VALUE)
-                    .gravity(Gravity.CENTER);
+            this.x = MuiNumberField.create(this.context, this.theme, card.leftValue().get()).bounds(0, Integer.MAX_VALUE).gravity(Gravity.CENTER);
+            this.y = MuiNumberField.create(this.context, this.theme, card.topValue().get()).bounds(0, Integer.MAX_VALUE).gravity(Gravity.CENTER);
 
             this.renderHeader();
             this.renderPosition();
@@ -350,7 +340,7 @@ public final class ConfigCardsPage {
     }
 
     private static @NotNull String loc(@NotNull String suffix) {
-        return MuiLocalization.get(GROUP + suffix);
+        return I18n.get(GROUP + suffix);
     }
 
     private static int dp(@NotNull Context context, int value) {
