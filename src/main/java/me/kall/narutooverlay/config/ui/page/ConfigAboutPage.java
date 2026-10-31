@@ -40,19 +40,18 @@ public final class ConfigAboutPage {
         page.section(GROUP + "about.info", section -> section.value(GROUP + "about.version", version())
                 .value(GROUP + "about.environment", NarutoOverlay.ENV + " \u00B7 " + SharedConstants.getCurrentVersion().getName() + " \u00B7 " + I18n.get(GROUP + "about.clientOnly")))
                 .section(GROUP + "about.background", section -> {
-            String folder = state.folder();
-            int count = background.images().size();
+                    String folder = state.folder();
+                    int count = background.images().size();
 
-            section.value(GROUP + "background.folder", folder.isEmpty() ? I18n.get(GROUP + "background.folder.none") : folder)
-                    .text(GROUP + "background.folder.hint")
-                    .customLayout(row -> addFolderButtons(row, background, folder))
-                    .value(GROUP + "background.images", count == 0 ? I18n.get(GROUP + "background.images.empty") : String.valueOf(count))
-                    .slider(GROUP + "background.interval", 2, 300, () -> (int) Math.round(background.state().interval()), background::setBackgroundInterval, value -> I18n.get(GROUP + "background.interval.value", value))
-                    .slider(GROUP + "background.fade", 0, 300, () -> (int) Math.round(background.state().fade() * 100.0D), value -> background.setBackgroundFade(value / 100.0D), value -> I18n.get(GROUP + "background.fade.value", String.format(Locale.ROOT, "%.1f", value / 100.0D)))
-                    .slider(GROUP + "background.dim", 0, 95, () -> (int) Math.round(background.state().dim() * 100.0D), value -> background.setBackgroundDim(value / 100.0D), value -> value + "%");
-        })
-        .section(GROUP + "about.config", section -> section.value(GROUP + "about.path", path.toString())
-                .customLayout(row -> addPathActions(row, path)))
+                    section.value(GROUP + "background.folder", folder.isEmpty() ? I18n.get(GROUP + "background.folder.none") : folder)
+                            .text(GROUP + "background.folder.hint")
+                            .customLayout(row -> addFolderButtons(row, background, folder))
+                            .value(GROUP + "background.images", count == 0 ? I18n.get(GROUP + "background.images.empty") : String.valueOf(count))
+                            .slider(GROUP + "background.interval", 2, 300, () -> (int) Math.round(background.state().interval()), background::setBackgroundInterval, value -> I18n.get(GROUP + "background.interval.value", value))
+                            .slider(GROUP + "background.fade", 0, 300, () -> (int) Math.round(background.state().fade() * 100.0D), value -> background.setBackgroundFade(value / 100.0D), value -> I18n.get(GROUP + "background.fade.value", String.format(Locale.ROOT, "%.1f", value / 100.0D)))
+                            .slider(GROUP + "background.dim", 0, 95, () -> (int) Math.round(background.state().dim() * 100.0D), value -> background.setBackgroundDim(value / 100.0D), value -> value + "%");
+                })
+                .section(GROUP + "about.config", section -> section.value(GROUP + "about.path", path.toString()).customLayout(row -> addPathActions(row, path)))
                 .section(GROUP + "about.usage", section -> {
                     Context context = section.page().context();
                     MuiTheme theme = section.page().theme();
