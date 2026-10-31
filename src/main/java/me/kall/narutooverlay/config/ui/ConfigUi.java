@@ -25,9 +25,6 @@ import org.lwjgl.glfw.GLFW;
 
 @SuppressWarnings("unused")
 public final class ConfigUi {
-    static final String GROUP = "narutooverlay.config.background.";
-    static final String BASE_NAME = "narutooverlay-config-bg";
-
     private static boolean installed;
 
     private ConfigUi() {}
@@ -59,9 +56,9 @@ public final class ConfigUi {
                 .railFooter(context -> MuiHintBadge.create(context, MuiTheme.modern(context), "narutooverlay.config.footer.escHint").color(Accent.primary()))
                 .onCreated(host::attach)
                 .onDestroyed(fragment -> host.attach(null))
-                .page("narutooverlay.config.nav.cards", "narutooverlay.config.cards.title", "narutooverlay.config.cards.subtitle", cardsPage -> ConfigCardsPage.populate(cardsPage, host))
-                .page("narutooverlay.config.nav.appearance", "narutooverlay.config.appearance.title", "narutooverlay.config.appearance.subtitle", form -> ConfigAppearancePage.populate(form, host))
-                .page("narutooverlay.config.nav.about", "narutooverlay.config.about.title", "narutooverlay.config.about.subtitle", aboutPage -> ConfigAboutPage.populate(aboutPage, host.background()))
+                .page("narutooverlay.config.nav.cards", "narutooverlay.config.cards.title", "narutooverlay.config.cards.subtitle", page -> ConfigCardsPage.populate(page, host))
+                .page("narutooverlay.config.nav.appearance", "narutooverlay.config.appearance.title", "narutooverlay.config.appearance.subtitle", page -> ConfigAppearancePage.populate(page, host))
+                .page("narutooverlay.config.nav.about", "narutooverlay.config.about.title", "narutooverlay.config.about.subtitle", page -> ConfigAboutPage.populate(page, host.background()))
                 .create(previous);
     }
 

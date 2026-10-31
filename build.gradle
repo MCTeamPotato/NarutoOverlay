@@ -64,7 +64,7 @@ dependencies {
         forge "net.minecraftforge:forge:${minecraft_version}-${versionKeys.forge}"
         implementation "icyllis.modernui:ModernUI-Core:${versionKeys.mui}"
         modImplementation("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${versionKeys.mui}.+")
-        modImplementation "me.kall.narutoui:narutoui:${minecraft_version}-${versionKeys.narutoui}"
+        modImplementation("me.kall.narutoui:narutoui:${minecraft_version}-${versionKeys.narutoui}")
     } else {
         neoForge "net.neoforged:neoforge:${versionKeys.neo}"
         implementation "dev.icyllis:modernui-core:${versionKeys.mui}"
