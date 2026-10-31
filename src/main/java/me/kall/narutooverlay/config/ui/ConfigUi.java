@@ -52,7 +52,7 @@ public final class ConfigUi {
 
         return MuiSettingsScreen.builder("NarutoOverlay")
                 .widgetFactory(NarutoShimmerWidgetFactory.INSTANCE)
-                .shimmerProfile(MuiShimmerProfile.create(new NarutoShimmerConfig()))
+                .shimmerProfile(NarutoShimmerConfig.profile())
                 .background(host.background())
                 .initialPage(0)
                 .railHeader(context -> MuiLogo.create(context, MuiTheme.modern(context), "N").color(Accent.primary()).textColor(Accent.onPrimary()))
