@@ -126,30 +126,12 @@ public final class ConfigCardsPage {
             this.x = MuiNumberField.create(this.context, this.theme, card.leftValue().get()).bounds(0, Integer.MAX_VALUE).gravity(Gravity.CENTER);
             this.y = MuiNumberField.create(this.context, this.theme, card.topValue().get()).bounds(0, Integer.MAX_VALUE).gravity(Gravity.CENTER);
 
-            this.renderHeader();
-            this.renderPosition();
-            this.body.divider();
-            this.renderFields();
-            this.renderReset();
-        }
-
-        @NotNull MuiCollapsibleCard view() {
-            return this.box;
-        }
-
-        void changed() {
-            this.parent.changed();
-        }
-
-        private void renderHeader() {
             Switch toggle = MuiControls.switchControl(this.context, this.theme);
             toggle.setChecked(this.card.enabledValue().get());
             toggle.setContentDescription(loc("cards.enabled"));
             toggle.setOnCheckedChangeListener((view, checked) -> this.setEnabled(checked));
             this.box.trailing(toggle);
-        }
 
-        private void renderPosition() {
             this.x.onChange(this::setX);
             this.y.onChange(this::setY);
 
@@ -171,26 +153,32 @@ public final class ConfigCardsPage {
             LinearLayout.LayoutParams presetParams = new LinearLayout.LayoutParams(MuiControls.MATCH, MuiControls.WRAP);
             presetParams.topMargin = dp(this.context, PRESET_TOP_MARGIN);
             this.body.add(presets, presetParams);
-        }
 
-        private @NotNull Button presetButton(@NotNull String labelKey, int horizontal, int vertical) {
-            return MuiControls.button(this.context, this.theme, loc(labelKey), true, view -> this.preset(horizontal, vertical));
-        }
+            this.body.divider();
 
-        private void renderFields() {
             boolean first = true;
             for (Field<?> field : this.card.allFields()) {
                 if (!first) this.body.divider();
                 first = false;
                 this.body.add(new FieldView(this, field).row());
             }
-        }
 
-        private void renderReset() {
             MuiTextAction reset = MuiTextAction.create(this.context, this.theme, loc("cards.resetCard"), this::resetCard);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(MuiControls.WRAP, MuiControls.WRAP);
             params.topMargin = dp(this.context, RESET_TOP_MARGIN);
             this.body.add(reset, params);
+        }
+
+        @NotNull MuiCollapsibleCard view() {
+            return this.box;
+        }
+
+        void changed() {
+            this.parent.changed();
+        }
+
+        private @NotNull Button presetButton(@NotNull String labelKey, int horizontal, int vertical) {
+            return MuiControls.button(this.context, this.theme, loc(labelKey), true, view -> this.preset(horizontal, vertical));
         }
 
         private void setEnabled(boolean enabled) {
@@ -259,23 +247,12 @@ public final class ConfigCardsPage {
             this.parent = parent;
             this.field = field;
             this.config = parent.card.fieldConfig(field.id());
-            this.row = this.buildRow();
-        }
 
-        @NotNull MuiLayout row() {
-            return this.row;
-        }
-
-        private @NotNull MuiLayout buildRow() {
             MuiLayout row = MuiLayout.row(this.parent.context, this.parent.theme).padding(0);
             row.add(MuiControls.text(this.parent.context, this.parent.theme, fieldName(this.field), 13, this.parent.theme.onSurface()), MuiControls.weight());
 
-            if (this.field.hasLabel()) {
-                row.add(MuiChip.create(this.parent.context, this.parent.theme, loc("chip.label"), this.config.showLabel()).onChanged(this::setLabel), chipParams(this.parent.context));
-            }
-            if (this.field.hasUnit()) {
-                row.add(MuiChip.create(this.parent.context, this.parent.theme, loc("chip.unit"), this.config.showUnit()).onChanged(this::setUnit), chipParams(this.parent.context));
-            }
+            if (this.field.hasLabel()) row.add(MuiChip.create(this.parent.context, this.parent.theme, loc("chip.label"), this.config.showLabel()).onChanged(this::setLabel), chipParams(this.parent.context));
+            if (this.field.hasUnit()) row.add(MuiChip.create(this.parent.context, this.parent.theme, loc("chip.unit"), this.config.showUnit()).onChanged(this::setUnit), chipParams(this.parent.context));
 
             Switch toggle = MuiControls.switchControl(this.parent.context, this.parent.theme);
             toggle.setChecked(this.config.enabled());
@@ -283,7 +260,11 @@ public final class ConfigCardsPage {
             LinearLayout.LayoutParams toggleParams = MuiControls.wrap();
             toggleParams.setMargins(dp(this.parent.context, 10), 0, 0, 0);
             row.add(toggle, toggleParams);
-            return row;
+            this.row = row;
+        }
+
+        @NotNull MuiLayout row() {
+            return this.row;
         }
 
         private void setLabel(boolean checked) {
