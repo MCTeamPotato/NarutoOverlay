@@ -14,6 +14,7 @@
   "narutooverlay.config.cards.bottomLeft": "左下",
   "narutooverlay.config.cards.bottomRight": "右下",
   "narutooverlay.config.cards.resetPosition": "重置位置",
+  "narutooverlay.config.cards.resetCard": "重置这张卡片",
   "narutooverlay.config.cards.resetAll": "重置所有卡片",
   "narutooverlay.config.chip.label": "显示标签",
   "narutooverlay.config.chip.unit": "显示单位",

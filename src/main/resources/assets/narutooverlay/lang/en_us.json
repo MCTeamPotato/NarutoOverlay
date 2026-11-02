@@ -14,6 +14,7 @@
   "narutooverlay.config.cards.bottomLeft": "Bottom left",
   "narutooverlay.config.cards.bottomRight": "Bottom right",
   "narutooverlay.config.cards.resetPosition": "Reset position",
+  "narutooverlay.config.cards.resetCard": "Reset this card",
   "narutooverlay.config.cards.resetAll": "Reset all cards",
   "narutooverlay.config.chip.label": "Show label",
   "narutooverlay.config.chip.unit": "Show unit",

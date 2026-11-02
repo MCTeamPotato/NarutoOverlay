@@ -29,11 +29,7 @@ import me.kall.narutoui.mui.layout.MuiLayout;
 import me.kall.narutoui.mui.overlay.MuiColorPickerOverlay;
 import me.kall.narutoui.mui.overlay.MuiCropOverlay;
 import me.kall.narutoui.mui.overlay.MuiCropOverlayFactory;
-import me.kall.narutoui.mui.screen.MuiConfigFragment;
-import me.kall.narutoui.mui.screen.MuiScreenHost;
-import me.kall.narutoui.mui.screen.MuiSettingsPage;
-import me.kall.narutoui.mui.screen.MuiSettingsScreen;
-import me.kall.narutoui.mui.screen.MuiSettingsSection;
+import me.kall.narutoui.mui.screen.*;
 import me.kall.narutoui.mui.shimmer.MuiShimmer;
 import me.kall.narutoui.mui.shimmer.MuiShimmerConfig;
 import me.kall.narutoui.mui.shimmer.MuiShimmerProfile;
@@ -159,7 +155,6 @@ public final class NarutoConfigScreen {
                         .add(MuiTextAction.create(context, theme, "narutooverlay.config.cards.resetPosition", () -> card.resetPosition(sync)));
                 body.add(cardRow);
 
-
                 int screenWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
                 int screenHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
                 int right = Math.max(8, screenWidth - card.lineWidth() - 8);
@@ -205,11 +200,20 @@ public final class NarutoConfigScreen {
                     body.add(fieldRow);
                 }
 
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(MATCH, WRAP);
-                params.setMargins(0, firstCard ? dp(context, 18) : 0, 0, dp(context, 12));
+                MuiTextAction resetCard = MuiTextAction.create(context, theme, "narutooverlay.config.cards.resetCard", () -> {
+                    card.resetAll();
+                    HOST.reloadCurrentPage();
+                });
+
+                LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(WRAP, WRAP);
+                resetParams.topMargin = dp(context, 10);
+                body.add(resetCard, resetParams);
+
+                LinearLayout.LayoutParams boxParams = new LinearLayout.LayoutParams(MATCH, WRAP);
+                boxParams.setMargins(0, firstCard ? dp(context, 18) : 0, 0, dp(context, 12));
                 firstCard = false;
 
-                content.add(box, params);
+                content.add(box, boxParams);
             }
 
             MuiTextAction resetAll = MuiTextAction.create(context, theme, "narutooverlay.config.cards.resetAll", () -> {

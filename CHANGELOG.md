@@ -10,3 +10,6 @@
 - Refine grouped-card rendering and dragging.
 # 1.2.0
 - Migrate ConfigUI implementation to using NarutoUI API
+# 1.3.0
+- Add a reset action for each card and mark configuration changes for saving when a card is reset. 
+- Update the bundled NarutoUI artifacts and add English and Chinese labels.

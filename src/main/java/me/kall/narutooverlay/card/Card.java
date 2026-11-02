@@ -139,6 +139,7 @@ public abstract class Card<D> {
         this.order.set(new ArrayList<>(this.fields.keySet()));
         for (FieldConfig config : this.configs.values()) config.reset();
         ConfigVersion.bump();
+        ConfigSaver.changed();
     }
 
     public final @NotNull String group() {

@@ -70,14 +70,12 @@ public final class TextLine {
         }
     }
 
-    private void drawShimmerCached(@NotNull GuiGraphics graphics, @NotNull Font font,
-                                   int left, int top, boolean shadow) {
+    private void drawShimmerCached(@NotNull GuiGraphics graphics, @NotNull Font font, int left, int top, boolean shadow) {
         long now = Util.getMillis();
         int fps = Math.max(1, RenderArgs.SHIMMER_FPS.get());
         long interval = Math.max(1L, 1000L / fps);
 
-        if (!this.shimmerCacheValid || left != this.shimmerCacheLeft
-                || now - this.shimmerCacheAt >= interval) {
+        if (!this.shimmerCacheValid || left != this.shimmerCacheLeft || now - this.shimmerCacheAt >= interval) {
             this.rebuildShimmerCache(left, now);
         }
 
@@ -103,8 +101,7 @@ public final class TextLine {
     }
 
     @Contract("_, _, _ -> new")
-    private static @NotNull CachedSequence buildShimmerCache(@NotNull Run run, int left,
-                                                             @NotNull ShimmerState state) {
+    private static @NotNull CachedSequence buildShimmerCache(@NotNull Run run, int left, @NotNull ShimmerState state) {
         float baseX = left + run.x();
         IntArrayList indices = new IntArrayList();
         IntArrayList codepoints = new IntArrayList();
@@ -117,12 +114,10 @@ public final class TextLine {
             return true;
         });
 
-        return new CachedSequence(indices.toIntArray(), codepoints.toIntArray(),
-                styles.toArray(new Style[0]));
+        return new CachedSequence(indices.toIntArray(), codepoints.toIntArray(), styles.toArray(new Style[0]));
     }
 
-    private void drawShimmerLegacy(@NotNull GuiGraphics graphics, @NotNull Font font,
-                                   int left, int top, boolean shadow) {
+    private void drawShimmerLegacy(@NotNull GuiGraphics graphics, @NotNull Font font, int left, int top, boolean shadow) {
         ShimmerState state = shimmerState();
         float y = top + textOffset();
 
@@ -160,15 +155,11 @@ public final class TextLine {
         return lerp(base, state.highlight(), wave * wave * state.strength());
     }
 
-    private static void drawRun(@NotNull GuiGraphics graphics, @NotNull Font font,
-                                @NotNull FormattedCharSequence sequence, float x, float y, boolean shadow) {
-        font.drawInBatch(sequence, x, y, 0xFFFFFF, shadow,
-                graphics.pose().last().pose(), graphics.bufferSource(),
-                Font.DisplayMode.NORMAL, 0, 15728880);
+    private static void drawRun(@NotNull GuiGraphics graphics, @NotNull Font font, @NotNull FormattedCharSequence sequence, float x, float y, boolean shadow) {
+        font.drawInBatch(sequence, x, y, 0xFFFFFF, shadow, graphics.pose().last().pose(), graphics.bufferSource(), Font.DisplayMode.NORMAL, 0, 15728880);
     }
 
-    private record ShimmerState(float time, float scaleA, float scaleB, float scaleMix,
-                                float strength, int highlight) {}
+    private record ShimmerState(float time, float scaleA, float scaleB, float scaleMix, float strength, int highlight) {}
 
     private record CachedSequence(int[] indices, int[] codepoints, Style[] styles) implements FormattedCharSequence {
         @Override
