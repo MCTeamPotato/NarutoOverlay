@@ -32,17 +32,12 @@ loom {
 }
 
 repositories {
-    // Local development builds of NarutoUI are published here together with their sources and
-    // javadoc jars (deps/maven/me/kall/narutoui/narutoui/<version>).
-    maven {
-        name = 'narutouiLocal'
-        url = uri('deps/maven')
-    }
     maven { url = 'https://files.minecraftforge.net/maven/' }
     maven { url = 'https://maven.neoforged.net/releases' }
+    maven { url = 'https://maven.izzel.io/releases/' }
     maven { url = 'https://maven.parchmentmc.org' }
     maven { url = 'https://cursemaven.com' }
-    maven { url = 'https://maven.izzel.io/releases/' }
+    maven { url = uri('deps/maven') }
 }
 
 def versions = [
@@ -70,6 +65,8 @@ dependencies {
         implementation "dev.icyllis:modernui-core:${versionKeys.mui}"
         modImplementation("icyllis.modernui:ModernUI-NeoForge:${minecraft_version}-${versionKeys.mui}.+")
     }
+    
+    shadow(files("deps/maven/me/kall/narutoui/narutoui/${minecraft_version}-${versionKeys.narutoui}/narutoui-${minecraft_version}-${versionKeys.narutoui}-common.jar"))
 
     if (!isNeo && hasMixin) {
         shadow(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.5"))
@@ -86,6 +83,7 @@ shadowJar {
     if (!isNeo && hasMixin) {
         relocate "com.llamalad7.mixinextras", "me.kall.${archives_name}.mixinextras"
     }
+    relocate "me.kall.narutoui", "me.kall.${archives_name}.narutoui"
     mergeServiceFiles()
     archiveClassifier = "dev-shadow"
     exclude "LICENSE_MixinExtras"
@@ -141,7 +139,6 @@ tasks.register("publishCurseForge", TaskPublishCurseForge) {
         mainFile.addModLoader(isNeo ? "NeoForge" : "Forge")
         mainFile.addJavaVersion("Java ${versionKeys.java}")
         mainFile.addGameVersion(minecraft_version)
-        mainFile.addOptional("narutoui")
         mainFile.addOptional("modern-ui")
 
         UploadArtifact sourceFile = mainFile.withAdditionalFile(sourcesJar)

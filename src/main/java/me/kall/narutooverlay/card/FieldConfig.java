@@ -1,5 +1,6 @@
 package me.kall.narutooverlay.card;
 
+import me.kall.narutooverlay.config.ConfigSaver;
 import net.minecraftforge.common.ForgeConfigSpec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,6 +44,23 @@ public final class FieldConfig {
 
     public ForgeConfigSpec.@Nullable BooleanValue showUnitValue() {
         return this.showUnit;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled.set(enabled);
+        ConfigSaver.changed();
+    }
+
+    public void setShowLabel(boolean showLabel) {
+        if (this.showLabel == null) return;
+        this.showLabel.set(showLabel);
+        ConfigSaver.changed();
+    }
+
+    public void setShowUnit(boolean showUnit) {
+        if (this.showUnit == null) return;
+        this.showUnit.set(showUnit);
+        ConfigSaver.changed();
     }
 
     public void reset() {

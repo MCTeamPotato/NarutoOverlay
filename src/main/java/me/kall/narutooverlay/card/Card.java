@@ -3,6 +3,7 @@ package me.kall.narutooverlay.card;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import me.kall.narutooverlay.backplane.BackplaneRenderer;
+import me.kall.narutooverlay.config.ConfigSaver;
 import me.kall.narutooverlay.config.ConfigVersion;
 import me.kall.narutooverlay.config.RenderArgs;
 import me.kall.narutooverlay.text.TextLine;
@@ -111,13 +112,24 @@ public abstract class Card<D> {
     }
 
     public final void moveTo(double left, double top) {
+        this.moveTo(left, top, null);
+    }
+
+    public final void moveTo(double left, double top, @Nullable Runnable extraSync) {
         this.left.set(Math.max(0, (int) left));
         this.top.set(Math.max(0, (int) top));
+        if (extraSync != null) extraSync.run();
+        ConfigSaver.changed();
     }
 
     public final void resetPosition() {
+        this.resetPosition(null);
+    }
+
+    public final void resetPosition(@Nullable Runnable extraSync) {
         this.left.set(this.defaultLeft);
         this.top.set(this.defaultTop);
+        if (extraSync != null) extraSync.run();
     }
 
     public final void resetAll() {
@@ -247,12 +259,27 @@ public abstract class Card<D> {
         return this.enabled;
     }
 
+    public final void setEnabled(boolean enabled) {
+        this.enabledValue().set(enabled);
+        ConfigSaver.changed();
+    }
+
     public final ForgeConfigSpec.@NotNull IntValue leftValue() {
         return this.left;
     }
 
+    public final void setLeft(int left) {
+        this.leftValue().set(left);
+        ConfigSaver.changed();
+    }
+
     public final ForgeConfigSpec.@NotNull IntValue topValue() {
         return this.top;
+    }
+
+    public final void setTop(int top) {
+        this.topValue().set(top);
+        ConfigSaver.changed();
     }
 
     public final @NotNull @Unmodifiable List<Field<D>> allFields() {

@@ -55,9 +55,8 @@ public final class TextLine {
     }
 
     public void draw(@NotNull GuiGraphics graphics, @NotNull Font font, int left, int top, boolean shadow) {
-        if (RenderArgs.TEXT_SHIMMER.get() && RenderArgs.HUD_TEXT_SHIMMER.get()
-                && RenderArgs.palette().hasAccent()) {
-            if (RenderArgs.TEXT_SHIMMER_CACHE.get()) {
+        if (RenderArgs.SHIMMER.get() && RenderArgs.palette().hasAccent()) {
+            if (RenderArgs.CACHE_SHIMMER.get()) {
                 this.drawShimmerCached(graphics, font, left, top, shadow);
             } else {
                 this.drawShimmerLegacy(graphics, font, left, top, shadow);
@@ -74,7 +73,7 @@ public final class TextLine {
     private void drawShimmerCached(@NotNull GuiGraphics graphics, @NotNull Font font,
                                    int left, int top, boolean shadow) {
         long now = Util.getMillis();
-        int fps = Math.max(1, RenderArgs.TEXT_SHIMMER_FPS.get());
+        int fps = Math.max(1, RenderArgs.SHIMMER_FPS.get());
         long interval = Math.max(1L, 1000L / fps);
 
         if (!this.shimmerCacheValid || left != this.shimmerCacheLeft

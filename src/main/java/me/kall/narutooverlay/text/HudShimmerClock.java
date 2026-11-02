@@ -29,9 +29,9 @@ final class HudShimmerClock {
     synchronized void update() {
         long now = System.currentTimeMillis();
 
-        double targetSpeed = RenderArgs.TEXT_SHIMMER_SPEED.get();
-        double targetScale = RenderArgs.TEXT_SHIMMER_SCALE.get();
-        double targetStrength = RenderArgs.TEXT_SHIMMER_STRENGTH.get();
+        double targetSpeed = RenderArgs.SHIMMER_SPEED.get();
+        double targetScale = RenderArgs.SHIMMER_SCALE.get();
+        double targetStrength = RenderArgs.SHIMMER_STRENGTH.get();
 
         if (!this.initialized) {
             this.initialized = true;

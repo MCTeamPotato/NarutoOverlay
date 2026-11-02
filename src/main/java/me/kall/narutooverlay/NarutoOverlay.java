@@ -1,14 +1,14 @@
 package me.kall.narutooverlay;
 
-import me.kall.narutooverlay.card.*;
-import me.kall.narutooverlay.config.*;
-import me.kall.narutooverlay.config.ui.*;
-import me.kall.narutooverlay.config.ui.background.*;
-import me.kall.narutooverlay.event.*;
-import me.kall.narutooverlay.event.api.*;
-import me.kall.narutooverlay.text.*;
-import me.kall.narutooverlay.theme.*;
-import me.kall.narutooverlay.util.*;
+import me.kall.narutooverlay.card.CardRegistry;
+import me.kall.narutooverlay.config.ConfigVersion;
+import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.config.ui.NarutoUiGate;
+import me.kall.narutooverlay.event.FpsTracker;
+import me.kall.narutooverlay.event.GCTracker;
+import me.kall.narutooverlay.event.RAMTracker;
+import me.kall.narutooverlay.event.TextRelocation;
+import me.kall.narutooverlay.event.api.TaskRegistryEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -56,8 +56,8 @@ public final class NarutoOverlay {
             modBus.addListener(RAMTracker::listen);
             modBus.addListener(RenderArgs.GC::listen);
 
-            if (ModList.get().isLoaded("narutoui")) {
-                NarutoUiCompat.integrate(context);
+            if (ModList.get().isLoaded("modernui")) {
+                NarutoUiGate.integrate(context);
             }
         }
     }
@@ -67,12 +67,6 @@ public final class NarutoOverlay {
         @SubscribeEvent(priority = EventPriority.LOWEST)
         public static void setup(@NotNull FMLClientSetupEvent event) {
             event.enqueueWork(() -> {
-                BundledBackgrounds.install();
-
-                if (ModList.get().isLoaded("narutoui")) {
-                    NarutoUiCompat.migrateBundledDefaults();
-                }
-
                 IEventBus bus = MinecraftForge.EVENT_BUS;
 
                 bus.addListener(CardRegistry::render);

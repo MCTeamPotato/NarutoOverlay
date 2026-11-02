@@ -44,17 +44,17 @@ public final class RenderArgs {
     public static final ForgeConfigSpec.BooleanValue DROP_SHADOW;
     public static final ForgeConfigSpec.BooleanValue EQUAL_WIDTH;
     public static final ForgeConfigSpec.BooleanValue DRAW_BACKPLANE;
-    public static final ForgeConfigSpec.BooleanValue TEXT_SHIMMER;
-    public static final ForgeConfigSpec.BooleanValue HUD_TEXT_SHIMMER;
-    public static final ForgeConfigSpec.BooleanValue CONFIG_TEXT_SHIMMER;
-    public static final ForgeConfigSpec.BooleanValue CONTROL_SHIMMER;
-    public static final ForgeConfigSpec.DoubleValue TEXT_SHIMMER_SPEED;
-    public static final ForgeConfigSpec.DoubleValue TEXT_SHIMMER_SCALE;
-    public static final ForgeConfigSpec.DoubleValue TEXT_SHIMMER_STRENGTH;
-    public static final ForgeConfigSpec.IntValue TEXT_SHIMMER_FPS;
+
+    public static final ForgeConfigSpec.BooleanValue SHIMMER;
+    public static final ForgeConfigSpec.DoubleValue SHIMMER_SPEED;
+    public static final ForgeConfigSpec.DoubleValue SHIMMER_SCALE;
+    public static final ForgeConfigSpec.DoubleValue SHIMMER_STRENGTH;
+    public static final ForgeConfigSpec.IntValue SHIMMER_FPS;
     public static final ForgeConfigSpec.IntValue CONFIG_SHIMMER_FPS;
-    public static final ForgeConfigSpec.BooleanValue TEXT_SHIMMER_CACHE;
+    public static final ForgeConfigSpec.BooleanValue CACHE_SHIMMER;
+
     public static final ForgeConfigSpec.DoubleValue TEXT_OFFSET_Y;
+
     public static final ForgeConfigSpec.BooleanValue BACKPLANE_BORDER_OVERRIDE;
     public static final ForgeConfigSpec.IntValue BACKPLANE_BORDER_RED;
     public static final ForgeConfigSpec.IntValue BACKPLANE_BORDER_GREEN;
@@ -127,31 +127,22 @@ public final class RenderArgs {
         EQUAL_WIDTH = builder
                 .comment("Whether all visible overlay cards use the width of the widest one, so stacked cards line up.")
                 .define("equalWidth", true);
-        TEXT_SHIMMER = builder
+        SHIMMER = builder
                 .comment(
                         "Sweep a golden chakra highlight across the overlay cards and the configuration screen text.",
                         "Only themes with an accent color (NARUTO) are affected; CLASSIC stays static."
                 )
-                .define("textShimmer", true);
-        HUD_TEXT_SHIMMER = builder
-                .comment("Shimmer the in-game overlay card text.")
-                .define("hudTextShimmer", true);
-        CONFIG_TEXT_SHIMMER = builder
-                .comment("Shimmer labels, values, headings and button text in the configuration screen.")
-                .define("configTextShimmer", true);
-        CONTROL_SHIMMER = builder
-                .comment("Shimmer switches, sliders, the logo circle and the ESC hint outline.")
-                .define("controlShimmer", true);
-        TEXT_SHIMMER_SPEED = builder
+                .define("Shimmerable", true);
+        SHIMMER_SPEED = builder
                 .comment("Speed multiplier of the text shimmer sweep.")
                 .defineInRange("textShimmerSpeed", 2.5D, 0.2D, 3.0D);
-        TEXT_SHIMMER_SCALE = builder
+        SHIMMER_SCALE = builder
                 .comment("Spatial frequency multiplier of the shimmer ripple; higher values create denser ripples.")
                 .defineInRange("textShimmerScale", 2.5D, 0.2D, 3.0D);
-        TEXT_SHIMMER_STRENGTH = builder
+        SHIMMER_STRENGTH = builder
                 .comment("Colour strength of the shimmer: 0 keeps the base colours, 1 uses the full ripple colours.")
                 .defineInRange("textShimmerStrength", 1.0D, 0.0D, 1.0D);
-        TEXT_SHIMMER_FPS = builder
+        SHIMMER_FPS = builder
                 .comment(
                         "How many times per second the HUD shimmer colours are recomputed.",
                         "Lower values reduce CPU/GC work; 30 is visually smooth, 5-240 supported."
@@ -163,7 +154,7 @@ public final class RenderArgs {
                         "Lower values reduce CPU work while the settings screen is open."
                 )
                 .defineInRange("configShimmerFps", 30, 5, 120);
-        TEXT_SHIMMER_CACHE = builder
+        CACHE_SHIMMER = builder
                 .comment(
                         "Cache the HUD's recoloured glyph sequence between updates instead of rebuilding it every frame.",
                         "Disable to compare against the old per-frame path; caching is recommended."
@@ -224,8 +215,7 @@ public final class RenderArgs {
                         "Listed pictures are shown first in this order; pictures that are not listed follow in alphabetical order.",
                         "Leave the list empty to sort the whole folder by file name."
                 )
-                .defineListAllowEmpty("backgroundOrder", new ArrayList<>(DEFAULT_BACKGROUND_ORDER),
-                        element -> element instanceof String);
+                .defineListAllowEmpty("backgroundOrder", new ArrayList<>(DEFAULT_BACKGROUND_ORDER), element -> element instanceof String);
         BACKGROUND_INTERVAL = builder
                 .comment("Seconds each background picture stays on screen.")
                 .defineInRange("backgroundInterval", 12.0D, 2.0D, 300.0D);
@@ -239,8 +229,7 @@ public final class RenderArgs {
                         "Visible region of the single fallback background image, relative to its size (0 to 1).",
                         "Slideshow pictures ignore these values and are framed automatically.",
                         "The screen uses these instead of rewriting the file, so the original picture is kept untouched."
-                )
-                .push("Crop");
+                ).push("Crop");
         BACKGROUND_CROP_X = builder.defineInRange("x", 0.0D, 0D, 1D);
         BACKGROUND_CROP_Y = builder.defineInRange("y", 0.0D, 0D, 1D);
         BACKGROUND_CROP_WIDTH = builder.defineInRange("width", 1.0D, 0D, 1D);
