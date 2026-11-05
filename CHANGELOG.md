@@ -13,3 +13,6 @@
 # 1.3.0
 - Add a reset action for each card and mark configuration changes for saving when a card is reset. 
 - Update the bundled NarutoUI artifacts and add English and Chinese labels.
+# 1.4.0
+- Add a fade transition when switching configuration pages, powered by NarutoUI's page transition API.
+- Update the bundled NarutoUI artifacts to 1.7.0.
