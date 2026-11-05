@@ -15,4 +15,4 @@
 - Update the bundled NarutoUI artifacts and add English and Chinese labels.
 # 1.4.0
 - Add a fade transition when switching configuration pages, powered by NarutoUI's page transition API.
-- Update the bundled NarutoUI artifacts to 1.7.0.
+- Update the NarutoUI artifacts to 1.7.0. No longer shadows it.
