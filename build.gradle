@@ -35,7 +35,6 @@ repositories {
     maven { url = 'https://files.minecraftforge.net/maven/' }
     maven { url = 'https://maven.neoforged.net/releases' }
     maven { url = 'https://maven.izzel.io/releases/' }
-    maven { url = 'https://maven.parchmentmc.org' }
     maven { url = 'https://cursemaven.com' }
     maven { url = uri('deps/maven') }
 }
@@ -50,10 +49,7 @@ def versionKeys = versions[minecraft_version]
 dependencies {
     minecraft "net.minecraft:minecraft:${minecraft_version}"
 
-    mappings loom.layered {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${minecraft_version}:${versionKeys.parchment}@zip")
-    }
+    mappings loom.officialMojangMappings()
 
     if (!isNeo) {
         forge "net.minecraftforge:forge:${minecraft_version}-${versionKeys.forge}"
