@@ -41,7 +41,7 @@ repositories {
 }
 
 def versions = [
-        "1.20.1": [forge: "47.4.28", parchment: "2023.09.03", java: 17, mui: "3.12.0", narutoui: "1.7.0"],
+        "1.20.1": [forge: "47.4.28", parchment: "2023.09.03", java: 17, mui: "3.12.0", narutoui: "9434684;9434685;9434686"],
         "1.21.1": [neo: "21.1.259",  parchment: "2024.11.17", java: 21, mui: "3.13.0"]
 ]
 
@@ -59,14 +59,15 @@ dependencies {
         forge "net.minecraftforge:forge:${minecraft_version}-${versionKeys.forge}"
         implementation "icyllis.modernui:ModernUI-Core:${versionKeys.mui}"
         modImplementation("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${versionKeys.mui}.+")
-        modImplementation("me.kall.narutoui:narutoui:${minecraft_version}-${versionKeys.narutoui}")
     } else {
         neoForge "net.neoforged:neoforge:${versionKeys.neo}"
         implementation "dev.icyllis:modernui-core:${versionKeys.mui}"
         modImplementation("icyllis.modernui:ModernUI-NeoForge:${minecraft_version}-${versionKeys.mui}.+")
     }
-    
-    shadow(files("deps/maven/me/kall/narutoui/narutoui/${minecraft_version}-${versionKeys.narutoui}/narutoui-${minecraft_version}-${versionKeys.narutoui}-common.jar"))
+
+    String nuiVer = versionKeys.narutoui
+    String[] parts = nuiVer.split(";")
+    modImplementation("curse.maven:narutoui-1766942:${parts[0]}-sources-${parts[1]}-javadoc-${parts[2]}")
 
     if (!isNeo && hasMixin) {
         shadow(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.5"))
@@ -83,7 +84,6 @@ shadowJar {
     if (!isNeo && hasMixin) {
         relocate "com.llamalad7.mixinextras", "me.kall.${archives_name}.mixinextras"
     }
-    relocate "me.kall.narutoui", "me.kall.${archives_name}.narutoui"
     mergeServiceFiles()
     archiveClassifier = "dev-shadow"
     exclude "LICENSE_MixinExtras"
@@ -140,6 +140,7 @@ tasks.register("publishCurseForge", TaskPublishCurseForge) {
         mainFile.addJavaVersion("Java ${versionKeys.java}")
         mainFile.addGameVersion(minecraft_version)
         mainFile.addOptional("modern-ui")
+        mainFile.addOptional("narutoui")
 
         UploadArtifact sourceFile = mainFile.withAdditionalFile(sourcesJar)
         sourceFile.changelog = changelog
