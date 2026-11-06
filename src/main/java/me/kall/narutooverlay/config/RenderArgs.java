@@ -4,14 +4,15 @@ import me.kall.narutooverlay.card.CardRegistry;
 import me.kall.narutooverlay.card.impl.FpsCard;
 import me.kall.narutooverlay.card.impl.GcCard;
 import me.kall.narutooverlay.card.impl.RamCard;
+import me.kall.narutooverlay.theme.HudSchemes;
 import me.kall.narutooverlay.theme.Palette;
-import me.kall.narutooverlay.theme.Theme;
 import me.kall.narutooverlay.theme.ThemeColors;
 import net.minecraft.client.KeyMapping;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.util.Lazy;
 import net.minecraftforge.event.TickEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ public final class RenderArgs {
 
     public static final ForgeConfigSpec.IntValue FPS_WINDOW;
 
-    public static final ForgeConfigSpec.EnumValue<Theme> THEME;
+    public static final ForgeConfigSpec.ConfigValue<String> THEME;
     public static final ForgeConfigSpec.ConfigValue<String> CUSTOM_ACCENT;
     public static final ForgeConfigSpec.ConfigValue<String> CUSTOM_BACKPLANE;
     public static final ForgeConfigSpec.BooleanValue DROP_SHADOW;
@@ -120,12 +121,13 @@ public final class RenderArgs {
         THEME = builder
                 .comment(
                         "Color theme of the overlay text and backplane.",
-                        "NARUTO: warm black, flame orange, gold and chakra-glow yellow with red accents, sampled from Kurama Chakra Mode art.",
+                        "NARUTO: warm black, flame orange, gold and chakra-glow yellow with red accents.",
                         "CLASSIC: white text on a translucent gray backplane.",
                         "JADE, AZURE, SAKURA and GRAPHITE: fixed palettes matching ModernEmb's color schemes.",
-                        "CUSTOM: uses customAccent and customBackplane; the remaining colors are derived for readability."
+                        "CUSTOM: uses customAccent and customBackplane; the remaining colors are derived for readability.",
+                        "Any scheme registered in NarutoUI is also accepted and appears in the appearance screen."
                 )
-                .defineEnum("theme", Theme.NARUTO);
+                .define("theme", "NARUTO", value -> value instanceof String text && !text.isBlank());
         CUSTOM_ACCENT = builder
                 .comment(
                         "Accent color of the CUSTOM theme, as RRGGBB or AARRGGBB hex.",
@@ -281,14 +283,16 @@ public final class RenderArgs {
     }
 
     /**
-     * Returns the palette for a theme, resolving the custom colors when needed.
+     * Returns the palette for a scheme id, resolving the custom colors when needed.
      *
-     * @param theme the theme
+     * @param theme scheme id
      * @return the effective palette
      */
-    public static @NotNull Palette paletteFor(@NotNull Theme theme) {
-        Palette palette = theme.palette();
-        return palette != null ? palette : ThemeColors.customPalette(customAccent(), customBackplane());
+    public static @NotNull Palette paletteFor(@Nullable String theme) {
+        if (HudSchemes.custom(theme)) {
+            return ThemeColors.customPalette(customAccent(), customBackplane());
+        }
+        return HudSchemes.paletteFor(theme);
     }
 
     /**

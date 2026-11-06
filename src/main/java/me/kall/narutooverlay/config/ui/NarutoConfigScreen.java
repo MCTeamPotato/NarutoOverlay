@@ -15,8 +15,9 @@ import me.kall.narutooverlay.config.ConfigSaver;
 import me.kall.narutooverlay.config.RenderArgs;
 import me.kall.narutooverlay.config.ui.background.NarutoJarResources;
 import me.kall.narutooverlay.event.TextRelocation;
+import me.kall.narutooverlay.theme.HudScheme;
+import me.kall.narutooverlay.theme.HudSchemes;
 import me.kall.narutooverlay.theme.Palette;
-import me.kall.narutooverlay.theme.Theme;
 import me.kall.narutooverlay.theme.ThemeColors;
 import me.kall.narutoui.mui.background.*;
 import me.kall.narutoui.mui.choice.MuiChoiceGrid;
@@ -55,7 +56,6 @@ import org.lwjgl.glfw.GLFW;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.IntConsumer;
@@ -239,12 +239,8 @@ public final class NarutoConfigScreen {
         page.shimmerAll()
                 .section("narutooverlay.config.appearance.theme", section -> section
                         .choiceGridBound("narutooverlay.config.appearance.theme", null,
-                                Arrays.stream(Theme.values())
-                                        .map(theme -> MuiOption.of(theme, themeLabel(theme))
-                                                .preview((context, activeTheme) ->
-                                                        new ThemePreview(context, RenderArgs.paletteFor(theme))))
-                                        .toList(),
-                                THEME, theme -> {
+                                themeChoices(),
+                                NarutoConfigScreen::selectedThemeId, theme -> {
                                     set(THEME, theme);
                                     HOST.onThemeChanged();
                                 })
@@ -260,7 +256,7 @@ public final class NarutoConfigScreen {
                                 .buttonLabel(localized("narutooverlay.config.appearance.pickColor"))
                                 .onPick(() -> pickCustomColor(true)), fill());
                     });
-                    section.enabledWhen(() -> THEME.get() == Theme.CUSTOM);
+                    section.enabledWhen(() -> HudSchemes.custom(THEME.get()));
                     section.customLayout(row -> {
                         Context context = row.getContext();
                         row.add(MuiColorField.create(context, MuiTheme.modern(context),
@@ -270,7 +266,7 @@ public final class NarutoConfigScreen {
                                 .buttonLabel(localized("narutooverlay.config.appearance.pickColor"))
                                 .onPick(() -> pickCustomColor(false)), fill());
                     });
-                    section.enabledWhen(() -> THEME.get() == Theme.CUSTOM);
+                    section.enabledWhen(() -> HudSchemes.custom(THEME.get()));
                 })
                 .section("narutooverlay.config.appearance.display", section -> {
                     section.toggle("narutooverlay.config.appearance.dropShadow", "narutooverlay.config.appearance.dropShadow.desc", DROP_SHADOW::get, value -> set(DROP_SHADOW, value))
@@ -345,10 +341,30 @@ public final class NarutoConfigScreen {
 
     }
 
-    private static @NotNull String themeLabel(@NotNull Theme theme) {
-        String key = "narutooverlay.theme." + theme.name().toLowerCase(Locale.ROOT);
+    private static @NotNull List<MuiOption<String>> themeChoices() {
+        List<MuiOption<String>> choices = new ArrayList<>();
+        for (HudScheme scheme : HudSchemes.all()) {
+            choices.add(MuiOption.of(scheme.id(), themeLabel(scheme))
+                    .preview((context, activeTheme) -> new ThemePreview(context, scheme.palette())));
+        }
+        choices.add(MuiOption.of("CUSTOM", localized("narutooverlay.theme.custom"))
+                .preview((context, activeTheme) -> new ThemePreview(context, RenderArgs.paletteFor("CUSTOM"))));
+        return choices;
+    }
+
+    private static @NotNull String selectedThemeId() {
+        String id = THEME.get();
+        if (HudSchemes.custom(id)) {
+            return "CUSTOM";
+        }
+        HudScheme scheme = HudSchemes.byId(id);
+        return scheme != null ? scheme.id() : HudSchemes.all().get(0).id();
+    }
+
+    private static @NotNull String themeLabel(@NotNull HudScheme scheme) {
+        String key = scheme.nameKey();
         String translated = I18n.get(key);
-        return translated.equals(key) ? theme.name() : translated;
+        return translated.equals(key) ? scheme.id() : translated;
     }
 
     private static @NotNull String localized(@NotNull String key) {
@@ -657,7 +673,7 @@ public final class NarutoConfigScreen {
 
         @Override
         public int @NotNull [] ramp() {
-            return ThemeColors.shimmerRamp(THEME.get(), palette());
+            return HudSchemes.shimmerRamp(THEME.get(), palette());
         }
     }
 

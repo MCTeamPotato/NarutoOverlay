@@ -3,6 +3,7 @@ package me.kall.narutooverlay.text;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.theme.HudSchemes;
 import me.kall.narutooverlay.theme.ThemeColors;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -141,7 +142,7 @@ public final class TextLine {
         float scaleB = (float) SHIMMER_CLOCK.scaleTo();
         float scaleMix = (float) SHIMMER_CLOCK.scaleMix();
         float strength = (float) SHIMMER_CLOCK.strength();
-        int[] ramp = ThemeColors.shimmerRamp(RenderArgs.THEME.get(), RenderArgs.palette());
+        int[] ramp = HudSchemes.shimmerRamp(RenderArgs.THEME.get(), RenderArgs.palette());
         return new ShimmerState(time, scaleA, scaleB, scaleMix, strength, ramp);
     }
 

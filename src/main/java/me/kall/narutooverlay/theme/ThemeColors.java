@@ -120,14 +120,15 @@ public final class ThemeColors {
      * @param palette active palette
      * @return nine ARGB stops
      */
-    public static int @NotNull [] shimmerRamp(@NotNull Theme theme, @NotNull Palette palette) {
+    public static int @NotNull [] shimmerRamp(@Nullable String schemeId, @NotNull Palette palette) {
         if (!palette.hasAccent()) {
             return NEUTRAL_SHIMMER.clone();
         }
 
         int accent = opaque(palette.accent());
+        boolean custom = schemeId == null || "CUSTOM".equalsIgnoreCase(schemeId);
 
-        if (theme == Theme.NARUTO) {
+        if (!custom && "NARUTO".equalsIgnoreCase(schemeId)) {
             return new int[]{
                     0xFFFFFFFF,
                     opaque(palette.warn()),
@@ -144,7 +145,7 @@ public final class ThemeColors {
         int light2 = mix(accent, 0xFFFFFFFF, 0.75D);
         int light1 = mix(accent, 0xFFFFFFFF, 0.45D);
         int accentLight = mix(accent, 0xFFFFFFFF, 0.20D);
-        int deep = theme == Theme.CUSTOM
+        int deep = custom
                 ? mix(accent, 0xFF000000, 0.40D)
                 : mix(opaque(palette.separator()), accent, 0.45D);
 

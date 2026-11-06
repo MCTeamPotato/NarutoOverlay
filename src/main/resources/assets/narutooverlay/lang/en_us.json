@@ -146,5 +146,11 @@
   "narutooverlay.theme.azure": "Azure",
   "narutooverlay.theme.sakura": "Sakura",
   "narutooverlay.theme.graphite": "Graphite",
-  "narutooverlay.theme.custom": "Custom"
+  "narutooverlay.theme.custom": "Custom",
+  "narutoui.scheme.naruto": "Naruto",
+  "narutoui.scheme.classic": "Classic",
+  "narutoui.scheme.jade": "Jade",
+  "narutoui.scheme.azure": "Azure",
+  "narutoui.scheme.sakura": "Sakura",
+  "narutoui.scheme.graphite": "Graphite"
 }
