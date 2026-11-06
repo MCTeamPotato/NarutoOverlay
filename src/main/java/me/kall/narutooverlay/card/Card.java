@@ -176,7 +176,7 @@ public abstract class Card<D> {
         int[] dividers = line.dividers();
 
         if (RenderArgs.DRAW_BACKPLANE.get()) {
-            int border = CardRegistry.isSelected(this) ? 0xFFFFC42E : RenderArgs.borderColor();
+            int border = CardRegistry.isSelected(this) ? RenderArgs.selectionColor() : RenderArgs.borderColor();
             BackplaneRenderer.render(graphics, left, top, width, height, dividers, border);
         } else {
             this.renderDividers(graphics, font);

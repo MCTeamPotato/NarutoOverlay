@@ -3,6 +3,7 @@ package me.kall.narutooverlay.text;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.theme.ThemeColors;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -140,9 +141,8 @@ public final class TextLine {
         float scaleB = (float) SHIMMER_CLOCK.scaleTo();
         float scaleMix = (float) SHIMMER_CLOCK.scaleMix();
         float strength = (float) SHIMMER_CLOCK.strength();
-        int accent = RenderArgs.palette().accent() | 0xFF000000;
-        int highlight = lerp(accent, 0xFFFFFF, 0.25F);
-        return new ShimmerState(time, scaleA, scaleB, scaleMix, strength, highlight);
+        int[] ramp = ThemeColors.shimmerRamp(RenderArgs.THEME.get(), RenderArgs.palette());
+        return new ShimmerState(time, scaleA, scaleB, scaleMix, strength, ramp);
     }
 
     private static int shimmerColor(@NotNull Style style, float baseX, int index, @NotNull ShimmerState state) {
@@ -152,14 +152,19 @@ public final class TextLine {
         float waveA = 0.5F + 0.5F * (float) Math.sin(phaseA);
         float waveB = 0.5F + 0.5F * (float) Math.sin(phaseB);
         float wave = waveA + (waveB - waveA) * state.scaleMix();
-        return lerp(base, state.highlight(), wave * wave * state.strength());
+
+        // Use the theme's full light-to-deep ramp, not just white <-> accent. The deep middle stop
+        // gives Jade/Azure/Sakura/Graphite/Custom the same tonal richness as Naruto's chakra ramp.
+        int target = ThemeColors.sampleShimmer(state.ramp(), wave);
+        float amount = 0.35F + 0.65F * wave;
+        return lerp(base, target, amount * state.strength());
     }
 
     private static void drawRun(@NotNull GuiGraphics graphics, @NotNull Font font, @NotNull FormattedCharSequence sequence, float x, float y, boolean shadow) {
         font.drawInBatch(sequence, x, y, 0xFFFFFF, shadow, graphics.pose().last().pose(), graphics.bufferSource(), Font.DisplayMode.NORMAL, 0, 15728880);
     }
 
-    private record ShimmerState(float time, float scaleA, float scaleB, float scaleMix, float strength, int highlight) {}
+    private record ShimmerState(float time, float scaleA, float scaleB, float scaleMix, float strength, int[] ramp) {}
 
     private record CachedSequence(int[] indices, int[] codepoints, Style[] styles) implements FormattedCharSequence {
         @Override

@@ -17,6 +17,7 @@ import me.kall.narutooverlay.config.ui.background.NarutoJarResources;
 import me.kall.narutooverlay.event.TextRelocation;
 import me.kall.narutooverlay.theme.Palette;
 import me.kall.narutooverlay.theme.Theme;
+import me.kall.narutooverlay.theme.ThemeColors;
 import me.kall.narutoui.mui.background.*;
 import me.kall.narutoui.mui.choice.MuiChoiceGrid;
 import me.kall.narutoui.mui.choice.MuiDropdown;
@@ -57,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 import static me.kall.narutooverlay.config.RenderArgs.*;
@@ -102,6 +104,10 @@ public final class NarutoConfigScreen {
                 .initialPage(0)
                 .shimmerNavigation()
                 .shimmerTitles()
+                .themeProvider(context -> {
+                    MuiTheme base = MuiTheme.modern(context);
+                    return base.withPrimary(NarutoAccent.primary()).withOnPrimary(NarutoAccent.onPrimary());
+                })
                 .railHeader(context -> MuiLogo.create(context, MuiTheme.modern(context), "N").color(NarutoAccent.primary()).textColor(NarutoAccent.onPrimary()))
                 .railFooter(context -> MuiHintBadge.create(context, MuiTheme.modern(context), "narutooverlay.config.footer.escHint").color(NarutoAccent.primary()))
                 .onCreated(HOST::attach)
@@ -232,11 +238,40 @@ public final class NarutoConfigScreen {
     private static void buildAppearance(@NotNull MuiSettingsPage page) {
         page.shimmerAll()
                 .section("narutooverlay.config.appearance.theme", section -> section
-                        .choiceGridBound("narutooverlay.config.appearance.theme", null, Arrays.stream(Theme.values()).map(theme -> MuiOption.of(theme, theme.name()).preview((context, activeTheme) -> new ThemePreview(context, theme.palette()))).toList(), THEME, theme -> {
-                            set(THEME, theme);
-                            HOST.onThemeChanged();
-                        })
+                        .choiceGridBound("narutooverlay.config.appearance.theme", null,
+                                Arrays.stream(Theme.values())
+                                        .map(theme -> MuiOption.of(theme, themeLabel(theme))
+                                                .preview((context, activeTheme) ->
+                                                        new ThemePreview(context, RenderArgs.paletteFor(theme))))
+                                        .toList(),
+                                THEME, theme -> {
+                                    set(THEME, theme);
+                                    HOST.onThemeChanged();
+                                })
                 )
+                .section("narutooverlay.config.appearance.custom", section -> {
+                    section.note(localized("narutooverlay.config.appearance.custom.note"));
+                    section.customLayout(row -> {
+                        Context context = row.getContext();
+                        row.add(MuiColorField.create(context, MuiTheme.modern(context),
+                                        localized("narutooverlay.config.appearance.customAccent")
+                                                + "  " + ThemeColors.format(customAccent()),
+                                        customAccent())
+                                .buttonLabel(localized("narutooverlay.config.appearance.pickColor"))
+                                .onPick(() -> pickCustomColor(true)), fill());
+                    });
+                    section.enabledWhen(() -> THEME.get() == Theme.CUSTOM);
+                    section.customLayout(row -> {
+                        Context context = row.getContext();
+                        row.add(MuiColorField.create(context, MuiTheme.modern(context),
+                                        localized("narutooverlay.config.appearance.customBackplane")
+                                                + "  " + ThemeColors.format(customBackplane()),
+                                        customBackplane())
+                                .buttonLabel(localized("narutooverlay.config.appearance.pickColor"))
+                                .onPick(() -> pickCustomColor(false)), fill());
+                    });
+                    section.enabledWhen(() -> THEME.get() == Theme.CUSTOM);
+                })
                 .section("narutooverlay.config.appearance.display", section -> {
                     section.toggle("narutooverlay.config.appearance.dropShadow", "narutooverlay.config.appearance.dropShadow.desc", DROP_SHADOW::get, value -> set(DROP_SHADOW, value))
                             .toggle("narutooverlay.config.appearance.equalWidth", "narutooverlay.config.appearance.equalWidth.desc", EQUAL_WIDTH::get, value -> set(EQUAL_WIDTH, value))
@@ -308,6 +343,50 @@ public final class NarutoConfigScreen {
                 )
         ;
 
+    }
+
+    private static @NotNull String themeLabel(@NotNull Theme theme) {
+        String key = "narutooverlay.theme." + theme.name().toLowerCase(Locale.ROOT);
+        String translated = I18n.get(key);
+        return translated.equals(key) ? theme.name() : translated;
+    }
+
+    private static @NotNull String localized(@NotNull String key) {
+        return I18n.get(key);
+    }
+
+    private static void pickCustomColor(boolean accent) {
+        String title = localized(accent
+                ? "narutooverlay.config.appearance.customAccent"
+                : "narutooverlay.config.appearance.customBackplane");
+        openColorPicker(title, accent ? customAccent() : customBackplane(), argb -> {
+            if (accent) {
+                CUSTOM_ACCENT.set(ThemeColors.toColorToken(ThemeColors.opaque(argb)));
+            } else {
+                CUSTOM_BACKPLANE.set(ThemeColors.toColorToken(argb));
+            }
+        });
+    }
+
+    private static void openColorPicker(@NotNull String title, int initial, @NotNull IntConsumer onPicked) {
+        Context context = HOST.requireContext();
+        MuiShimmerProfile.withCurrent(NarutoShimmerConfig.PROFILE, () ->
+                withFactory(NarutoShimmerFactory.INSTANCE, () ->
+                        HOST.showOverlay(new MuiColorPickerOverlay(
+                                context,
+                                MuiTheme.modern(context).withPrimary(NarutoAccent.primary()),
+                                initial,
+                                new MuiColorPickerOverlay.Labels(
+                                        title,
+                                        localized("narutooverlay.config.color.brightness"),
+                                        localized("narutooverlay.config.color.alpha"),
+                                        localized("narutooverlay.config.color.apply"),
+                                        localized("narutooverlay.config.color.cancel")),
+                                argb -> {
+                                    onPicked.accept(argb);
+                                    ConfigSaver.changed();
+                                    HOST.reloadCurrentPage();
+                                }))));
     }
 
     private static void disableLastRow(@NotNull MuiSettingsSection section) {
@@ -535,7 +614,10 @@ public final class NarutoConfigScreen {
 
         @Override
         public void onThemeChanged() {
-            this.reloadCurrentPage();
+            MuiConfigFragment current = this.fragment;
+            if (current != null) {
+                current.reloadTheme();
+            }
             ConfigSaver.changed();
         }
     }
@@ -575,18 +657,7 @@ public final class NarutoConfigScreen {
 
         @Override
         public int @NotNull [] ramp() {
-            Palette palette = palette();
-            return new int[]{
-                    0xFFFFFFFF,
-                    palette.warn() | 0xFF000000,
-                    palette.accent() | 0xFF000000,
-                    palette.label() | 0xFF000000,
-                    palette.critical() | 0xFF000000,
-                    palette.label() | 0xFF000000,
-                    palette.accent() | 0xFF000000,
-                    palette.warn() | 0xFF000000,
-                    0xFFFFFFFF
-            };
+            return ThemeColors.shimmerRamp(THEME.get(), palette());
         }
     }
 
@@ -675,7 +746,7 @@ public final class NarutoConfigScreen {
         }
 
         private static @NotNull MuiTheme naruto(@NotNull MuiTheme theme) {
-            return theme.withPrimary(NarutoAccent.primary()).withOnPrimary(0xFF000000);
+            return theme.withPrimary(NarutoAccent.primary()).withOnPrimary(NarutoAccent.onPrimary());
         }
     }
 
@@ -686,7 +757,7 @@ public final class NarutoConfigScreen {
         }
 
         public static int onPrimary() {
-            return palette().hasAccent() ? 0xFF2A1400 : 0xFF16171C;
+            return ThemeColors.readableOn(primary());
         }
     }
 }

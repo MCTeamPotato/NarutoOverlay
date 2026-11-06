@@ -6,6 +6,7 @@ import me.kall.narutooverlay.card.impl.GcCard;
 import me.kall.narutooverlay.card.impl.RamCard;
 import me.kall.narutooverlay.theme.Palette;
 import me.kall.narutooverlay.theme.Theme;
+import me.kall.narutooverlay.theme.ThemeColors;
 import net.minecraft.client.KeyMapping;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.util.Lazy;
@@ -41,6 +42,8 @@ public final class RenderArgs {
     public static final ForgeConfigSpec.IntValue FPS_WINDOW;
 
     public static final ForgeConfigSpec.EnumValue<Theme> THEME;
+    public static final ForgeConfigSpec.ConfigValue<String> CUSTOM_ACCENT;
+    public static final ForgeConfigSpec.ConfigValue<String> CUSTOM_BACKPLANE;
     public static final ForgeConfigSpec.BooleanValue DROP_SHADOW;
     public static final ForgeConfigSpec.BooleanValue EQUAL_WIDTH;
     public static final ForgeConfigSpec.BooleanValue DRAW_BACKPLANE;
@@ -118,9 +121,23 @@ public final class RenderArgs {
                 .comment(
                         "Color theme of the overlay text and backplane.",
                         "NARUTO: warm black, flame orange, gold and chakra-glow yellow with red accents, sampled from Kurama Chakra Mode art.",
-                        "CLASSIC: white text on a translucent gray backplane."
+                        "CLASSIC: white text on a translucent gray backplane.",
+                        "JADE, AZURE, SAKURA and GRAPHITE: fixed palettes matching ModernEmb's color schemes.",
+                        "CUSTOM: uses customAccent and customBackplane; the remaining colors are derived for readability."
                 )
                 .defineEnum("theme", Theme.NARUTO);
+        CUSTOM_ACCENT = builder
+                .comment(
+                        "Accent color of the CUSTOM theme, as RRGGBB or AARRGGBB hex.",
+                        "Used by the active card strip, shimmer and the derived border."
+                )
+                .define("customAccent", "FFFF8F2A", value -> value instanceof String text && ThemeColors.isColorToken(text));
+        CUSTOM_BACKPLANE = builder
+                .comment(
+                        "Backplane color of the CUSTOM theme, as RRGGBB or AARRGGBB hex.",
+                        "Keep the alpha channel for a translucent HUD panel, for example B01E0A08."
+                )
+                .define("customBackplane", "B01E0A08", value -> value instanceof String text && ThemeColors.isColorToken(text));
         DROP_SHADOW = builder
                 .comment("Whether to draw a shadow behind the text.")
                 .define("dropShadow", false);
@@ -129,8 +146,8 @@ public final class RenderArgs {
                 .define("equalWidth", true);
         SHIMMER = builder
                 .comment(
-                        "Sweep a golden chakra highlight across the overlay cards and the configuration screen text.",
-                        "Only themes with an accent color (NARUTO) are affected; CLASSIC stays static."
+                        "Sweep a highlight across the overlay cards and the configuration screen text.",
+                        "Only themes with an accent color (every theme except CLASSIC) are affected."
                 )
                 .define("Shimmerable", true);
         SHIMMER_SPEED = builder
@@ -260,7 +277,32 @@ public final class RenderArgs {
     }
 
     public static @NotNull Palette palette() {
-        return THEME.get().palette();
+        return paletteFor(THEME.get());
+    }
+
+    /**
+     * Returns the palette for a theme, resolving the custom colors when needed.
+     *
+     * @param theme the theme
+     * @return the effective palette
+     */
+    public static @NotNull Palette paletteFor(@NotNull Theme theme) {
+        Palette palette = theme.palette();
+        return palette != null ? palette : ThemeColors.customPalette(customAccent(), customBackplane());
+    }
+
+    /**
+     * @return the configured custom accent color
+     */
+    public static int customAccent() {
+        return ThemeColors.parseColorToken(CUSTOM_ACCENT.get(), 0xFFFF8F2A);
+    }
+
+    /**
+     * @return the configured custom backplane color, including alpha
+     */
+    public static int customBackplane() {
+        return ThemeColors.parseColorToken(CUSTOM_BACKPLANE.get(), 0xB01E0A08);
     }
 
     public static int borderColor() {
@@ -269,5 +311,18 @@ public final class RenderArgs {
         }
 
         return palette().border();
+    }
+
+    /**
+     * Returns the outline color used for selecting or dragging a card.
+     * <p>
+     * This used to be Naruto gold for every theme. Using the active accent keeps the selection
+     * highlight consistent with Jade, Azure, Sakura, Graphite and Custom.
+     *
+     * @return the selection outline color
+     */
+    public static int selectionColor() {
+        Palette palette = palette();
+        return palette.hasAccent() ? palette.accent() | 0xFF000000 : borderColor();
     }
 }

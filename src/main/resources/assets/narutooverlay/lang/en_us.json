@@ -40,6 +40,10 @@
   "narutooverlay.config.appearance.title": "Appearance",
   "narutooverlay.config.appearance.subtitle": "Theme, display, shimmer and performance.",
   "narutooverlay.config.appearance.theme": "Theme",
+  "narutooverlay.config.appearance.custom": "Custom theme colors",
+  "narutooverlay.config.appearance.custom.note": "Used by the Custom theme. Label, unit and divider colors are derived from the backplane for readability.",
+  "narutooverlay.config.appearance.customAccent": "Accent color",
+  "narutooverlay.config.appearance.customBackplane": "Backplane color",
   "narutooverlay.config.appearance.display": "Display",
   "narutooverlay.config.appearance.dropShadow": "Drop shadow",
   "narutooverlay.config.appearance.dropShadow.desc": "Draw a shadow behind overlay text.",
@@ -134,5 +138,13 @@
   "narutooverlay.config.color.brightness": "Brightness",
   "narutooverlay.config.color.alpha": "Alpha",
   "narutooverlay.config.color.apply": "Apply",
-  "narutooverlay.config.color.cancel": "Cancel"
+  "narutooverlay.config.color.cancel": "Cancel",
+
+  "narutooverlay.theme.naruto": "Naruto",
+  "narutooverlay.theme.classic": "Classic",
+  "narutooverlay.theme.jade": "Jade",
+  "narutooverlay.theme.azure": "Azure",
+  "narutooverlay.theme.sakura": "Sakura",
+  "narutooverlay.theme.graphite": "Graphite",
+  "narutooverlay.theme.custom": "Custom"
 }

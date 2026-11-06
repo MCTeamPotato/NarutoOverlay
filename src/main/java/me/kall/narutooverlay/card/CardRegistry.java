@@ -95,7 +95,7 @@ public final class CardRegistry {
         }
 
         if (RenderArgs.DRAW_BACKPLANE.get()) {
-            int border = members.stream().anyMatch(CardRegistry::isSelected) ? 0xFFFFC42E : RenderArgs.borderColor();
+            int border = members.stream().anyMatch(CardRegistry::isSelected) ? RenderArgs.selectionColor() : RenderArgs.borderColor();
             BackplaneRenderer.renderGroup(graphics, bounds.left(), bounds.top(),
                     bounds.right() - bounds.left(), bounds.bottom() - bounds.top(), separators, border);
         } else {

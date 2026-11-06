@@ -1,0 +1,3368 @@
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\backplane\AbstractBackplane.java =====
+package me.kall.narutooverlay.backplane;
+
+import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.theme.Palette;
+import net.minecraft.client.gui.GuiGraphics;
+import org.jetbrains.annotations.NotNull;
+
+public abstract class AbstractBackplane {
+    public static final int PADDING_X = 4;
+    public static final int PADDING_RIGHT = 3;
+    public static final int PADDING_TOP = 2;
+    public static final int PADDING_BOTTOM = 2;
+    public static final int ACCENT_WIDTH = 2;
+
+    public final void render(@NotNull GuiGraphics graphics, int left, int top, int width, int height, int @NotNull [] dividers, int borderColor) {
+        Frame frame = frame(left, top, width, height);
+
+        this.draw(graphics, frame.card(), frame.palette(), dividers, borderColor);
+    }
+
+    public final void renderGroup(@NotNull GuiGraphics graphics, int left, int top, int width, int height, int @NotNull [] separators, int borderColor) {
+        Frame frame = frame(left, top, width, height);
+
+        this.draw(graphics, frame.card(), frame.palette(), new int[0], borderColor);
+
+        int separator = frame.palette().separator() | 0xFF000000;
+        int start = top + 1;
+        int end = top + height - 1;
+        for (int y : separators) {
+            if (y <= start || y >= end) continue;
+            graphics.fill(left + 1, y, left + width - 1, y + 1, separator);
+        }
+    }
+
+    private static @NotNull Frame frame(int left, int top, int width, int height) {
+        Palette palette = RenderArgs.palette();
+        boolean accent = palette.hasAccent();
+        int accentExtra = accent ? ACCENT_WIDTH + 1 : 0;
+
+        Card card = new Card(left - PADDING_X - accentExtra, top - PADDING_TOP, left + width + PADDING_RIGHT, top + height + PADDING_BOTTOM, accent, left);
+        return new Frame(palette, card);
+    }
+
+    protected abstract void draw(@NotNull GuiGraphics graphics, @NotNull Card card, @NotNull Palette palette, int @NotNull [] dividers, int borderColor);
+
+    private record Frame(@NotNull Palette palette, @NotNull Card card) {}
+
+    protected record Card(int left, int top, int right, int bottom, boolean accent, int origin) {
+        public int accentLeft() {
+            return this.left + 1;
+        }
+
+        public int accentRight() {
+            return this.left + 1 + ACCENT_WIDTH;
+        }
+
+        public int dividerColumn(int offset) {
+            return this.origin + offset;
+        }
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\backplane\BackplaneRenderer.java =====
+package me.kall.narutooverlay.backplane;
+
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraftforge.fml.ModList;
+
+public class BackplaneRenderer {
+    private static final AbstractBackplane BACKPLANE = ModList.get().isLoaded("modernui") ? new MuiBackplane() : new DefaultBackplane();
+
+    public static void render(GuiGraphics graphics, int left, int top, int width, int height, int[] dividers, int borderColor) {
+        BACKPLANE.render(graphics, left, top, width, height, dividers, borderColor);
+    }
+
+    public static void renderGroup(GuiGraphics graphics, int left, int top, int width, int height, int[] separators, int borderColor) {
+        BACKPLANE.renderGroup(graphics, left, top, width, height, separators, borderColor);
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\backplane\DefaultBackplane.java =====
+package me.kall.narutooverlay.backplane;
+
+import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.theme.Palette;
+import net.minecraft.client.gui.GuiGraphics;
+import org.jetbrains.annotations.NotNull;
+
+public class DefaultBackplane extends AbstractBackplane {
+    private static final int TOP_HIGHLIGHT = 0x14FFFFFF;
+    private static final float CORNER_ALPHA = 0.35F;
+
+    public static int scaleAlpha(int argb, float factor) {
+        int alpha = Math.round((argb >>> 24) * Math.max(0.0F, Math.min(1.0F, factor)));
+        return alpha << 24 | argb & 0xFFFFFF;
+    }
+
+    @Override
+    protected void draw(@NotNull GuiGraphics graphics, @NotNull Card card, @NotNull Palette palette, int @NotNull [] dividers, int borderColor) {
+        int left = card.left();
+        int top = card.top();
+        int right = card.right();
+        int bottom = card.bottom();
+
+        int backplane = palette.backplane();
+
+        graphics.fill(left + 1, top, right - 1, bottom, backplane);
+        graphics.fill(left, top + 1, left + 1, bottom - 1, backplane);
+        graphics.fill(right - 1, top + 1, right, bottom - 1, backplane);
+
+        graphics.fill(left + 1, top + 1, right - 1, top + 2, TOP_HIGHLIGHT);
+
+        if (card.accent()) {
+            graphics.fillGradient(card.accentLeft(), top + 1, card.accentRight(), bottom - 1, palette.accent() | 0xFF000000, RenderArgs.borderColor() | 0xFF000000);
+        }
+
+        graphics.fill(left + 1, top, right - 1, top + 1, borderColor);
+        graphics.fill(left + 1, bottom - 1, right - 1, bottom, borderColor);
+        graphics.fill(left, top + 1, left + 1, bottom - 1, borderColor);
+        graphics.fill(right - 1, top + 1, right, bottom - 1, borderColor);
+
+        int corner = scaleAlpha(borderColor, CORNER_ALPHA);
+        graphics.fill(left, top, left + 1, top + 1, corner);
+        graphics.fill(right - 1, top, right, top + 1, corner);
+        graphics.fill(left, bottom - 1, left + 1, bottom, corner);
+        graphics.fill(right - 1, bottom - 1, right, bottom, corner);
+
+        int divider = RenderArgs.borderColor();
+        for (int offset : dividers) {
+            int x = card.dividerColumn(offset);
+            graphics.fill(x, top + 1, x + 1, bottom - 1, divider);
+        }
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\backplane\MuiBackplane.java =====
+package me.kall.narutooverlay.backplane;
+
+import icyllis.modernui.mc.ExtendedGuiGraphics;
+import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.theme.Palette;
+import net.minecraft.client.gui.GuiGraphics;
+import org.jetbrains.annotations.NotNull;
+
+public class MuiBackplane extends AbstractBackplane {
+    private static final float CORNER_RADIUS = 4.0F;
+    private static final float ACCENT_RADIUS = 1.0F;
+    private static final float ACCENT_INSET = 2.0F;
+    private static final float MIN_DIVIDER_WIDTH = 0.5F;
+
+    @Override
+    protected void draw(@NotNull GuiGraphics graphics, @NotNull Card card, @NotNull Palette palette, int @NotNull [] dividers, int borderColor) {
+        ExtendedGuiGraphics extended = new ExtendedGuiGraphics(graphics);
+
+        float cardLeft = card.left();
+        float cardTop = card.top();
+        float cardRight = card.right();
+        float cardBottom = card.bottom();
+
+        extended.setColor(palette.backplane());
+        extended.fillRoundRect(cardLeft, cardTop, cardRight, cardBottom, CORNER_RADIUS);
+
+        if (card.accent()) {
+            extended.setGradient(ExtendedGuiGraphics.Orientation.TOP_BOTTOM, palette.accent() | 0xFF000000, RenderArgs.borderColor() | 0xFF000000);
+            extended.fillRoundRect(card.accentLeft(), cardTop + ACCENT_INSET, card.accentRight(), cardBottom - ACCENT_INSET, ACCENT_RADIUS);
+        }
+
+        float borderWidth = RenderArgs.BACKPLANE_BORDER_WIDTH.get().floatValue();
+        if (borderWidth > 0) {
+            float halfBorder = borderWidth / 2;
+            extended.setColor(borderColor);
+            extended.setStrokeWidth(borderWidth);
+            extended.strokeRoundRect(cardLeft - halfBorder, cardTop - halfBorder, cardRight + halfBorder, cardBottom + halfBorder, CORNER_RADIUS + halfBorder);
+        }
+
+        if (dividers.length == 0) return;
+
+        float dividerWidth = Math.max(borderWidth, MIN_DIVIDER_WIDTH);
+        float halfDivider = dividerWidth / 2;
+
+        extended.setColor(RenderArgs.borderColor());
+        for (int offset : dividers) {
+            float center = card.dividerColumn(offset) + 0.5F;
+            extended.fillRoundRect(center - halfDivider, cardTop, center + halfDivider, cardBottom, halfDivider);
+        }
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\card\Card.java =====
+package me.kall.narutooverlay.card;
+
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import me.kall.narutooverlay.backplane.BackplaneRenderer;
+import me.kall.narutooverlay.config.ConfigSaver;
+import me.kall.narutooverlay.config.ConfigVersion;
+import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.text.TextLine;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.Minecraft;
+import net.minecraftforge.common.ForgeConfigSpec;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
+
+import java.util.*;
+
+public abstract class Card<D> {
+    private final String id;
+    private final int defaultLeft;
+    private final int defaultTop;
+
+    private final ForgeConfigSpec.BooleanValue enabled;
+    private final ForgeConfigSpec.IntValue left;
+    private final ForgeConfigSpec.IntValue top;
+    private final ForgeConfigSpec.ConfigValue<String> group;
+    private final ForgeConfigSpec.ConfigValue<List<? extends String>> order;
+
+    private final Map<String, Field<D>> fields = new Object2ObjectLinkedOpenHashMap<>();
+    private final Map<String, FieldConfig> configs = new Object2ObjectOpenHashMap<>();
+
+    private @Nullable D data;
+    private @Nullable TextLine line;
+    private int builtVersion = -1;
+
+    protected Card(ForgeConfigSpec.@NotNull Builder builder, @NotNull String id, int defaultLeft, int defaultTop, boolean enabledByDefault, @NotNull List<Field<D>> fields) {
+        this.id = id;
+        this.defaultLeft = defaultLeft;
+        this.defaultTop = defaultTop;
+
+        for (Field<D> field : fields) {
+            if (this.fields.put(field.id(), field) != null) {
+                throw new IllegalArgumentException("Duplicate field id '" + field.id() + "' in card " + id);
+            }
+        }
+
+        builder.push(id);
+
+        this.enabled = builder
+                .comment("Whether the " + id + " overlay is shown.")
+                .define("enabled", enabledByDefault);
+        this.left = builder
+                .comment("Horizontal position of the " + id + " overlay.")
+                .defineInRange("left", defaultLeft, 0, Integer.MAX_VALUE);
+        this.top = builder
+                .comment("Vertical position of the " + id + " overlay.")
+                .defineInRange("top", defaultTop, 0, Integer.MAX_VALUE);
+        this.group = builder
+                .comment(
+                        "Non-empty group id shared by cards merged into one outline.",
+                        "Managed by Shift-clicking cards in the chat screen; leave empty for a standalone card."
+                )
+                .define("group", "");
+        this.order = builder
+                .comment(
+                        "Order of the fields, from left to right.",
+                        "Available fields: " + String.join(", ", this.fields.keySet()) + ".",
+                        "Unknown entries are ignored; fields that are not listed are appended in their default order."
+                )
+                .defineListAllowEmpty("order", new ArrayList<>(this.fields.keySet()), String.class::isInstance);
+
+        builder.push("Fields");
+        for (Field<D> field : this.fields.values()) {
+            builder.push(field.id());
+            this.configs.put(field.id(), new FieldConfig(builder, field.hasLabel(), field.hasUnit(), field.enabledByDefault()));
+            builder.pop();
+        }
+        builder.pop();
+
+        builder.pop();
+
+        CardRegistry.register(this);
+    }
+
+    public final @NotNull String id() {
+        return this.id;
+    }
+
+    public final int left() {
+        return this.left.get();
+    }
+
+    public final int top() {
+        return this.top.get();
+    }
+
+    public final boolean active() {
+        if (!this.enabled.get()) return false;
+
+        for (FieldConfig config : this.configs.values()) {
+            if (config.enabled()) return true;
+        }
+
+        return false;
+    }
+
+    protected final void accept(@NotNull D data) {
+        this.data = data;
+        this.builtVersion = -1;
+    }
+
+    public final void moveTo(double left, double top) {
+        this.moveTo(left, top, null);
+    }
+
+    public final void moveTo(double left, double top, @Nullable Runnable extraSync) {
+        this.left.set(Math.max(0, (int) left));
+        this.top.set(Math.max(0, (int) top));
+        if (extraSync != null) extraSync.run();
+        ConfigSaver.changed();
+    }
+
+    public final void resetPosition() {
+        this.resetPosition(null);
+    }
+
+    public final void resetPosition(@Nullable Runnable extraSync) {
+        this.left.set(this.defaultLeft);
+        this.top.set(this.defaultTop);
+        if (extraSync != null) extraSync.run();
+    }
+
+    public final void resetAll() {
+        this.resetPosition();
+        this.enabled.set(this.enabled.getDefault());
+        this.group.set("");
+        this.order.set(new ArrayList<>(this.fields.keySet()));
+        for (FieldConfig config : this.configs.values()) config.reset();
+        ConfigVersion.bump();
+        ConfigSaver.changed();
+    }
+
+    public final @NotNull String group() {
+        return this.group.get();
+    }
+
+    public final void setGroup(@NotNull String group) {
+        this.group.set(group);
+    }
+
+    public final boolean contains(double mouseX, double mouseY) {
+        TextLine own = this.line();
+        if (own == null) return false;
+
+        double left = this.left.get();
+        double top = this.top.get();
+        double width = this.width(own);
+        double height = Minecraft.getInstance().font.lineHeight;
+
+        return mouseX >= left && mouseX <= left + width && mouseY >= top && mouseY <= top + height;
+    }
+
+    final void render(@NotNull GuiGraphics graphics) {
+        TextLine line = this.line();
+        if (line == null) return;
+
+        Font font = Minecraft.getInstance().font;
+
+        int left = this.left.get();
+        int top = this.top.get();
+        int width = this.width(line);
+        int height = font.lineHeight;
+
+        int[] dividers = line.dividers();
+
+        if (RenderArgs.DRAW_BACKPLANE.get()) {
+            int border = CardRegistry.isSelected(this) ? 0xFFFFC42E : RenderArgs.borderColor();
+            BackplaneRenderer.render(graphics, left, top, width, height, dividers, border);
+        } else {
+            this.renderDividers(graphics, font);
+        }
+
+        line.draw(graphics, font, left, top, RenderArgs.DROP_SHADOW.get());
+    }
+
+    final void renderLine(@NotNull GuiGraphics graphics, @NotNull Font font) {
+        TextLine line = this.line();
+        if (line == null) return;
+
+        line.draw(graphics, font, this.left.get(), this.top.get(), RenderArgs.DROP_SHADOW.get());
+    }
+
+    final void renderDividers(@NotNull GuiGraphics graphics, @NotNull Font font) {
+        TextLine line = this.line();
+        if (line == null) return;
+
+        int left = this.left.get();
+        int top = this.top.get();
+        int color = RenderArgs.DRAW_BACKPLANE.get()
+                ? RenderArgs.borderColor()
+                : RenderArgs.palette().separator() | 0xFF000000;
+
+        for (int offset : line.dividers()) {
+            int x = left + offset;
+            graphics.fill(x, top + 1, x + 1, top + font.lineHeight - 1, color);
+        }
+    }
+
+    private int width(@NotNull TextLine own) {
+        return RenderArgs.EQUAL_WIDTH.get() ? Math.max(own.width(), CardRegistry.sharedWidth()) : own.width();
+    }
+
+    final @Nullable TextLine line() {
+        if (!this.enabled.get()) return null;
+
+        D data = this.data;
+        if (data == null) return null;
+
+        int version = ConfigVersion.get();
+        if (this.builtVersion != version) {
+            this.line = this.build(data);
+            this.builtVersion = version;
+        }
+
+        return this.line;
+    }
+
+    private @Nullable TextLine build(@NotNull D data) {
+        TextLine.Builder builder = TextLine.builder(Minecraft.getInstance().font);
+        boolean first = true;
+
+        for (Field<D> field : this.orderedFields()) {
+            FieldConfig config = this.configs.get(field.id());
+            if (!config.enabled()) continue;
+
+            if (!first) builder.divider();
+            first = false;
+
+            field.append(builder, data, config);
+        }
+
+        return first ? null : builder.build();
+    }
+
+    private @NotNull List<Field<D>> orderedFields() {
+        Set<String> ids = new LinkedHashSet<>();
+        for (String id : this.order.get()) {
+            if (this.fields.containsKey(id)) ids.add(id);
+        }
+        ids.addAll(this.fields.keySet());
+
+        List<Field<D>> ordered = new ArrayList<>(ids.size());
+        for (String id : ids) ordered.add(this.fields.get(id));
+        return ordered;
+    }
+
+    public final ForgeConfigSpec.@NotNull BooleanValue enabledValue() {
+        return this.enabled;
+    }
+
+    public final void setEnabled(boolean enabled) {
+        this.enabledValue().set(enabled);
+        ConfigSaver.changed();
+    }
+
+    public final ForgeConfigSpec.@NotNull IntValue leftValue() {
+        return this.left;
+    }
+
+    public final void setLeft(int left) {
+        this.leftValue().set(left);
+        ConfigSaver.changed();
+    }
+
+    public final ForgeConfigSpec.@NotNull IntValue topValue() {
+        return this.top;
+    }
+
+    public final void setTop(int top) {
+        this.topValue().set(top);
+        ConfigSaver.changed();
+    }
+
+    public final @NotNull @Unmodifiable List<Field<D>> allFields() {
+        return List.copyOf(this.fields.values());
+    }
+
+    public final @NotNull FieldConfig fieldConfig(@NotNull String fieldId) {
+        FieldConfig config = this.configs.get(fieldId);
+        if (config == null) throw new IllegalArgumentException("Unknown field '" + fieldId + "' in card " + this.id);
+        return config;
+    }
+
+    public final int lineWidth() {
+        TextLine own = this.line();
+        return own == null ? 0 : this.width(own);
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\card\CardRegistry.java =====
+package me.kall.narutooverlay.card;
+
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import me.kall.narutooverlay.backplane.AbstractBackplane;
+import me.kall.narutooverlay.backplane.BackplaneRenderer;
+import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.text.TextLine;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.Minecraft;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public final class CardRegistry {
+    private static final List<Card<?>> CARDS = new ObjectArrayList<>(3);
+    private static final int GROUP_ROW_GAP = 4;
+
+    private static @Nullable Card<?> selected;
+
+    private CardRegistry() {}
+
+    static void register(@NotNull Card<?> card) {
+        CARDS.add(card);
+    }
+
+    @Contract(pure = true)
+    public static @NotNull @UnmodifiableView List<Card<?>> all() {
+        return Collections.unmodifiableList(CARDS);
+    }
+
+    public static void render(@NotNull RenderGuiOverlayEvent.Post event) {
+        if (event.getOverlay() != VanillaGuiOverlay.HOTBAR.type()) return;
+
+        GuiGraphics graphics = event.getGuiGraphics();
+        Set<String> drawnGroups = new HashSet<>();
+
+        for (Card<?> card : CARDS) {
+            if (!card.active()) continue;
+
+            String group = card.group();
+            if (!group.isEmpty()) {
+                if (!drawnGroups.add(group)) continue;
+
+                List<Card<?>> members = activeMembers(group);
+                if (members.size() > 1) {
+                    renderGroup(graphics, members);
+                    continue;
+                }
+            }
+
+            card.render(graphics);
+        }
+    }
+
+    private static @NotNull List<Card<?>> activeMembers(@NotNull String group) {
+        List<Card<?>> members = new ArrayList<>(2);
+        for (Card<?> card : CARDS) {
+            if (card.active() && group.equals(card.group())) members.add(card);
+        }
+        return members;
+    }
+
+    public static @NotNull List<Card<?>> groupMembers(@NotNull Card<?> card) {
+        String group = card.group();
+        if (group.isEmpty()) return List.of(card);
+
+        List<Card<?>> members = new ArrayList<>(2);
+        for (Card<?> candidate : CARDS) {
+            if (group.equals(candidate.group())) members.add(candidate);
+        }
+        return members;
+    }
+
+    private static void renderGroup(@NotNull GuiGraphics graphics, @NotNull List<Card<?>> members) {
+        members.sort(Comparator.comparingInt((Card<?> card) -> card.top()).thenComparingInt(Card::left));
+
+        Font font = Minecraft.getInstance().font;
+        Bounds bounds = bounds(members);
+
+        int[] separators = new int[Math.max(0, members.size() - 1)];
+        for (int i = 1; i < members.size(); i++) {
+            separators[i - 1] = members.get(i).top() - 2;
+        }
+
+        if (RenderArgs.DRAW_BACKPLANE.get()) {
+            int border = members.stream().anyMatch(CardRegistry::isSelected) ? 0xFFFFC42E : RenderArgs.borderColor();
+            BackplaneRenderer.renderGroup(graphics, bounds.left(), bounds.top(),
+                    bounds.right() - bounds.left(), bounds.bottom() - bounds.top(), separators, border);
+        } else {
+            int color = RenderArgs.palette().separator() | 0xFF000000;
+            for (int y : separators) {
+                if (y <= bounds.top() || y >= bounds.bottom()) continue;
+                graphics.fill(bounds.left(), y, bounds.right(), y + 1, color);
+            }
+        }
+
+        for (Card<?> card : members) card.renderDividers(graphics, font);
+        for (Card<?> card : members) card.renderLine(graphics, font);
+    }
+
+    public static @Nullable Card<?> pick(double mouseX, double mouseY) {
+        Set<String> checkedGroups = new ObjectOpenHashSet<>();
+
+        for (int i = CARDS.size() - 1; i >= 0; i--) {
+            Card<?> card = CARDS.get(i);
+            if (!card.active()) continue;
+
+            String group = card.group();
+            if (!group.isEmpty()) {
+                if (!checkedGroups.add(group)) continue;
+
+                List<Card<?>> members = activeMembers(group);
+                if (members.size() > 1 && groupContains(members, mouseX, mouseY)) {
+                    for (Card<?> member : members) {
+                        if (member.contains(mouseX, mouseY)) return member;
+                    }
+                    return members.get(0);
+                }
+
+                continue;
+            }
+
+            if (card.contains(mouseX, mouseY)) return card;
+        }
+
+        return null;
+    }
+
+    private static boolean groupContains(@NotNull List<Card<?>> members, double mouseX, double mouseY) {
+        Bounds bounds = bounds(members);
+
+        int accentExtra = RenderArgs.palette().hasAccent() ? AbstractBackplane.ACCENT_WIDTH + 1 : 0;
+        int x0 = bounds.left() - AbstractBackplane.PADDING_X - accentExtra;
+        int x1 = bounds.right() + AbstractBackplane.PADDING_RIGHT;
+        int y0 = bounds.top() - AbstractBackplane.PADDING_TOP;
+        int y1 = bounds.bottom() + AbstractBackplane.PADDING_BOTTOM;
+
+        return mouseX >= x0 && mouseX <= x1 && mouseY >= y0 && mouseY <= y1;
+    }
+
+    private static @NotNull Bounds bounds(@NotNull List<Card<?>> members) {
+        Font font = Minecraft.getInstance().font;
+        int left = Integer.MAX_VALUE;
+        int top = Integer.MAX_VALUE;
+        int right = Integer.MIN_VALUE;
+        int bottom = Integer.MIN_VALUE;
+
+        for (Card<?> card : members) {
+            left = Math.min(left, card.left());
+            top = Math.min(top, card.top());
+            right = Math.max(right, card.left() + card.lineWidth());
+            bottom = Math.max(bottom, card.top() + font.lineHeight);
+        }
+
+        return new Bounds(left, top, right, bottom);
+    }
+
+    private record Bounds(int left, int top, int right, int bottom) {}
+
+    private static int leftEdge(@NotNull List<Card<?>> members) {
+        int left = Integer.MAX_VALUE;
+        for (Card<?> member : members) left = Math.min(left, member.left());
+        return left;
+    }
+
+    private static int bottomEdge(@NotNull List<Card<?>> members, int lineHeight) {
+        int bottom = Integer.MIN_VALUE;
+        for (Card<?> member : members) bottom = Math.max(bottom, member.top() + lineHeight);
+        return bottom;
+    }
+
+    public static boolean merge(@NotNull Card<?> first, @NotNull Card<?> second) {
+        if (first == second || !first.active() || !second.active()) return false;
+
+        String firstGroup = first.group();
+        String secondGroup = second.group();
+        if (!firstGroup.isEmpty() && firstGroup.equals(secondGroup)) return false;
+
+        Font font = Minecraft.getInstance().font;
+
+        if (!firstGroup.isEmpty() && !secondGroup.isEmpty()) {
+            List<Card<?>> source = activeMembers(firstGroup);
+            List<Card<?>> target = activeMembers(secondGroup);
+            if (source.isEmpty() || target.isEmpty()) return false;
+
+            int left = leftEdge(source);
+            int sourceBottom = bottomEdge(source, font.lineHeight);
+
+            int targetTop = Integer.MAX_VALUE;
+            for (Card<?> member : target) targetTop = Math.min(targetTop, member.top());
+
+            for (Card<?> member : target) {
+                member.moveTo(left, sourceBottom + GROUP_ROW_GAP + (member.top() - targetTop));
+                member.setGroup(firstGroup);
+            }
+
+            return true;
+        }
+
+        if (firstGroup.isEmpty() && secondGroup.isEmpty()) {
+            int left = Math.min(first.left(), second.left());
+            int top = Math.min(first.top(), second.top());
+
+            first.moveTo(left, top);
+            second.moveTo(left, top + font.lineHeight + GROUP_ROW_GAP);
+
+            String group = "g:" + first.id() + "+" + second.id();
+            first.setGroup(group);
+            second.setGroup(group);
+            return true;
+        }
+
+        if (!firstGroup.isEmpty()) {
+            List<Card<?>> source = activeMembers(firstGroup);
+            if (source.isEmpty()) return false;
+
+            int sourceTop = Integer.MAX_VALUE;
+            for (Card<?> member : source) sourceTop = Math.min(sourceTop, member.top());
+
+            int left = second.left();
+            int top = second.top();
+            int offset = top + font.lineHeight + GROUP_ROW_GAP - sourceTop;
+
+            for (Card<?> member : source) member.moveTo(left, member.top() + offset);
+
+            second.setGroup(firstGroup);
+            return true;
+        }
+
+        List<Card<?>> existing = activeMembers(secondGroup);
+        if (existing.isEmpty()) return false;
+
+        int left = leftEdge(existing);
+        int bottom = bottomEdge(existing, font.lineHeight);
+
+        first.moveTo(left, bottom + GROUP_ROW_GAP);
+        first.setGroup(secondGroup);
+        return true;
+    }
+
+    public static boolean split(@NotNull Card<?> card) {
+        String group = card.group();
+        if (group.isEmpty()) return false;
+
+        List<Card<?>> members = groupMembers(card);
+        members.sort(Comparator.comparingInt((Card<?> member) -> member.top()).thenComparingInt(Card::left));
+
+        if (members.isEmpty()) return false;
+
+        Font font = Minecraft.getInstance().font;
+        int top = members.get(0).top();
+
+        for (Card<?> member : members) {
+            member.setGroup("");
+            member.moveTo(member.left(), top);
+            top += font.lineHeight + GROUP_ROW_GAP + 2;
+        }
+
+        return members.size() > 1;
+    }
+
+    public static void select(@Nullable Card<?> card) {
+        selected = card;
+    }
+
+    public static @Nullable Card<?> selected() {
+        return selected;
+    }
+
+    public static boolean isSelected(@Nullable Card<?> card) {
+        return card != null && card == selected;
+    }
+
+    static int sharedWidth() {
+        int width = 0;
+        for (Card<?> card : CARDS) {
+            TextLine line = card.line();
+            if (line != null) width = Math.max(width, line.width());
+        }
+        return width;
+    }
+
+    public static void resetPositions() {
+        selected = null;
+        for (Card<?> card : CARDS) {
+            card.setGroup("");
+            card.resetPosition();
+        }
+    }
+
+    public static void resetAll() {
+        selected = null;
+        for (Card<?> card : CARDS) card.resetAll();
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\card\Field.java =====
+package me.kall.narutooverlay.card;
+
+import me.kall.narutooverlay.text.TextLine;
+import org.jetbrains.annotations.NotNull;
+
+public record Field<D>(@NotNull String id, boolean hasLabel, boolean hasUnit, boolean enabledByDefault, @NotNull Appender<D> appender) {
+    @FunctionalInterface
+    public interface Appender<D> {
+        void append(@NotNull TextLine.Builder builder, @NotNull D data, @NotNull FieldConfig config);
+    }
+
+    public static <D> @NotNull Field<D> of(@NotNull String id, boolean hasLabel, boolean hasUnit, @NotNull Appender<D> appender) {
+        return of(id, hasLabel, hasUnit, true, appender);
+    }
+
+    public static <D> @NotNull Field<D> of(@NotNull String id, boolean hasLabel, boolean hasUnit, boolean enabledByDefault, @NotNull Appender<D> appender) {
+        return new Field<>(id, hasLabel, hasUnit, enabledByDefault, appender);
+    }
+
+    void append(@NotNull TextLine.Builder builder, @NotNull D data, @NotNull FieldConfig config) {
+        this.appender.append(builder, data, config);
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\card\FieldConfig.java =====
+package me.kall.narutooverlay.card;
+
+import me.kall.narutooverlay.config.ConfigSaver;
+import net.minecraftforge.common.ForgeConfigSpec;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public final class FieldConfig {
+    private final ForgeConfigSpec.BooleanValue enabled;
+    private final ForgeConfigSpec.@Nullable BooleanValue showLabel;
+    private final ForgeConfigSpec.@Nullable BooleanValue showUnit;
+
+    FieldConfig(ForgeConfigSpec.@NotNull Builder builder, boolean hasLabel, boolean hasUnit, boolean enabledByDefault) {
+        this.enabled = builder
+                .comment("Whether this field is shown.")
+                .define("enabled", enabledByDefault);
+        this.showLabel = hasLabel
+                ? builder.comment("Whether the caption in front of the value is shown.").define("showLabel", true)
+                : null;
+        this.showUnit = hasUnit
+                ? builder.comment("Whether the unit behind the value is shown.").define("showUnit", true)
+                : null;
+    }
+
+    public boolean enabled() {
+        return this.enabled.get();
+    }
+
+    public boolean showLabel() {
+        return this.showLabel == null || this.showLabel.get();
+    }
+
+    public boolean showUnit() {
+        return this.showUnit == null || this.showUnit.get();
+    }
+
+    public @NotNull ForgeConfigSpec.BooleanValue enabledValue() {
+        return this.enabled;
+    }
+
+    public ForgeConfigSpec.@Nullable BooleanValue showLabelValue() {
+        return this.showLabel;
+    }
+
+    public ForgeConfigSpec.@Nullable BooleanValue showUnitValue() {
+        return this.showUnit;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled.set(enabled);
+        ConfigSaver.changed();
+    }
+
+    public void setShowLabel(boolean showLabel) {
+        if (this.showLabel == null) return;
+        this.showLabel.set(showLabel);
+        ConfigSaver.changed();
+    }
+
+    public void setShowUnit(boolean showUnit) {
+        if (this.showUnit == null) return;
+        this.showUnit.set(showUnit);
+        ConfigSaver.changed();
+    }
+
+    public void reset() {
+        this.enabled.set(this.enabled.getDefault());
+        if (this.showLabel != null) this.showLabel.set(true);
+        if (this.showUnit != null) this.showUnit.set(true);
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\card\impl\FpsCard.java =====
+package me.kall.narutooverlay.card.impl;
+
+import me.kall.narutooverlay.card.Card;
+import me.kall.narutooverlay.card.Field;
+import me.kall.narutooverlay.event.api.FpsUpdateEvent;
+import me.kall.narutooverlay.text.TextLine;
+import me.kall.narutooverlay.theme.ValueLevel;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraftforge.common.ForgeConfigSpec;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.function.ToDoubleFunction;
+import java.util.List;
+
+import static me.kall.narutooverlay.util.Texts.*;
+
+public final class FpsCard extends Card<FpsUpdateEvent> {
+    private static final String FPS_SAMPLE = "0000";
+
+    public FpsCard(ForgeConfigSpec.@NotNull Builder builder) {
+        super(builder, "FPS", 10, 5, true, List.of(
+                metric("inst", "INST: ", true, event -> event.inst),
+                metric("min", "MIN: ", false, event -> event.min),
+                metric("avg", "AVG: ", false, event -> event.avg),
+                metric("low", "1% LOW: ", false, event -> event.low)
+        ));
+    }
+
+    public void update(@NotNull FpsUpdateEvent event) {
+        this.accept(event);
+    }
+
+    private static @NotNull Field<FpsUpdateEvent> metric(@NotNull String id, @NotNull String caption, boolean enabledByDefault, @NotNull ToDoubleFunction<FpsUpdateEvent> getter) {
+        return Field.of(id, true, false, enabledByDefault, (builder, event, config) -> {
+            if (config.showLabel()) builder.text(label(caption));
+            builder.slot(fps(getter.applyAsDouble(event)), FPS_SAMPLE, TextLine.Align.RIGHT);
+        });
+    }
+
+    private static @NotNull MutableComponent fps(double value) {
+        int fps = (int) value;
+        ValueLevel level = fps < 30 ? ValueLevel.CRITICAL : fps < 60 ? ValueLevel.WARN : ValueLevel.NORMAL;
+        return value(String.valueOf(fps), level);
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\card\impl\GcCard.java =====
+package me.kall.narutooverlay.card.impl;
+
+import me.kall.narutooverlay.card.Card;
+import me.kall.narutooverlay.card.Field;
+import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.event.api.TaskRegistryEvent;
+import me.kall.narutooverlay.event.GCTracker;
+import me.kall.narutooverlay.text.TextLine;
+import me.kall.narutooverlay.util.Formats;
+import net.minecraftforge.common.ForgeConfigSpec;
+import org.jetbrains.annotations.NotNull;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+
+import static me.kall.narutooverlay.util.Texts.*;
+
+public final class GcCard extends Card<GcCard.Snapshot> {
+    public record Snapshot(@NotNull String name, long cost, @NotNull Formats.Quantity elapsed) {}
+
+    private static final String NAME_SAMPLE = "G1 Young Generation";
+    private static final String COST_SAMPLE = "000";
+    private static final String AGO_NUMBER_SAMPLE = "00:00";
+    private static final String AGO_UNIT_SAMPLE = " min";
+
+    private static final Field<Snapshot> NAME = Field.of("name", true, false, false, (builder, snapshot, config) -> {
+        if (config.showLabel()) builder.text(label("GC: "));
+        builder.slot(value(snapshot.name()), NAME_SAMPLE, TextLine.Align.LEFT);
+    });
+
+    private static final Field<Snapshot> COST = Field.of("cost", true, true, false, (builder, snapshot, config) -> {
+        if (config.showLabel()) builder.text(label("COST: "));
+        builder.slot(value(Long.toString(snapshot.cost())), COST_SAMPLE, TextLine.Align.RIGHT);
+        if (config.showUnit()) builder.text(unit(" ms"));
+    });
+
+    private static final Field<Snapshot> AGO = Field.of("ago", true, true, false, (builder, snapshot, config) -> {
+        if (config.showLabel()) builder.text(label("AGO: "));
+        builder.slot(value(snapshot.elapsed().number()), AGO_NUMBER_SAMPLE, TextLine.Align.RIGHT);
+        if (config.showUnit()) builder.slot(unit(snapshot.elapsed().unit()), AGO_UNIT_SAMPLE, TextLine.Align.LEFT);
+    });
+
+    public GcCard(ForgeConfigSpec.@NotNull Builder builder) {
+        super(builder, "GC", 10, 21, false, List.of(NAME, COST, AGO));
+    }
+
+    public void listen(@NotNull TaskRegistryEvent event) {
+        event.register(RenderArgs.GC_COOLDOWN::get, this::active, () -> {
+            Instant time = GCTracker.time();
+            String name = GCTracker.name();
+            if (time == null || name == null) return;
+
+            Duration duration = Duration.between(time, Instant.now());
+            double ago = (double) duration.getSeconds() + duration.getNano() / 1_000_000_000.0D;
+
+            this.accept(new Snapshot(name, GCTracker.duration(), Formats.elapsed(ago)));
+        });
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\card\impl\RamCard.java =====
+package me.kall.narutooverlay.card.impl;
+
+import me.kall.narutooverlay.card.Card;
+import me.kall.narutooverlay.card.Field;
+import me.kall.narutooverlay.event.api.RAMUpdateEvent;
+import me.kall.narutooverlay.text.TextLine;
+import me.kall.narutooverlay.theme.ValueLevel;
+import me.kall.narutooverlay.util.Formats;
+import net.minecraftforge.common.ForgeConfigSpec;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+
+import static me.kall.narutooverlay.util.Texts.*;
+
+public final class RamCard extends Card<RAMUpdateEvent> {
+    private static final String PERCENT_SAMPLE = "100%";
+    private static final String MEMORY_SAMPLE = "99999";
+
+    private static final Field<RAMUpdateEvent> USAGE = Field.of("usage", true, true, false, (builder, event, config) -> {
+        ValueLevel level = level(usage(event));
+        String max = Formats.memory(event.max);
+
+        if (config.showLabel()) builder.text(label("RAM: "));
+        builder.slot(value(Formats.memory(event.used), level), max, TextLine.Align.RIGHT)
+                .text(separator("/"))
+                .text(value(max));
+        if (config.showUnit()) builder.text(unit(Formats.memoryUnit()));
+    });
+
+    private static final Field<RAMUpdateEvent> PERCENT = Field.of("percent", false, false, false, (builder, event, config) -> {
+        int percent = (int) Math.round(usage(event) * 100.0D);
+        builder.slot(value(percent + "%"), PERCENT_SAMPLE, TextLine.Align.RIGHT);
+    });
+
+    private static final Field<RAMUpdateEvent> ALLOC = Field.of("alloc", true, true, false, (builder, event, config) -> {
+        if (config.showLabel()) builder.text(label("ALLOC: "));
+        builder.slot(value(Formats.memory(event.total)), MEMORY_SAMPLE, TextLine.Align.RIGHT);
+        if (config.showUnit()) builder.text(unit(Formats.memoryUnit()));
+    });
+
+    public RamCard(ForgeConfigSpec.@NotNull Builder builder) {
+        super(builder, "RAM", 10, 37, false, List.of(USAGE, PERCENT, ALLOC));
+    }
+
+    public void update(@NotNull RAMUpdateEvent event) {
+        this.accept(event);
+    }
+
+    private static double usage(@NotNull RAMUpdateEvent event) {
+        return event.max > 0L ? (double) event.used / (double) event.max : 0.0D;
+    }
+
+    private static @NotNull ValueLevel level(double usage) {
+        return usage >= 0.9D ? ValueLevel.CRITICAL : usage >= 0.75D ? ValueLevel.WARN : ValueLevel.NORMAL;
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\config\ConfigSaver.java =====
+package me.kall.narutooverlay.config;
+
+import net.minecraft.Util;
+
+public final class ConfigSaver {
+    private static final long SAVE_DELAY_MS = 400L;
+
+    private static boolean dirty;
+    private static long lastChange;
+
+    private ConfigSaver() {}
+
+    public static void changed() {
+        ConfigVersion.bump();
+        dirty = true;
+        lastChange = Util.getMillis();
+    }
+
+    public static void tick() {
+        if (dirty && Util.getMillis() - lastChange >= SAVE_DELAY_MS) {
+            flush();
+        }
+    }
+
+    public static void flush() {
+        if (!dirty) return;
+        dirty = false;
+        RenderArgs.CONFIG.save();
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\config\ConfigVersion.java =====
+package me.kall.narutooverlay.config;
+
+import net.minecraftforge.fml.event.config.ModConfigEvent;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+@SuppressWarnings("unused")
+public final class ConfigVersion {
+    private static final AtomicInteger VERSION = new AtomicInteger();
+
+    private ConfigVersion() {}
+
+    public static int get() {
+        return VERSION.get();
+    }
+
+    public static void bump() {
+        VERSION.incrementAndGet();
+    }
+
+    public static void onLoading(ModConfigEvent.Loading event) {
+        bump();
+    }
+
+    public static void onReloading(ModConfigEvent.Reloading event) {
+        bump();
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\config\RenderArgs.java =====
+package me.kall.narutooverlay.config;
+
+import me.kall.narutooverlay.card.CardRegistry;
+import me.kall.narutooverlay.card.impl.FpsCard;
+import me.kall.narutooverlay.card.impl.GcCard;
+import me.kall.narutooverlay.card.impl.RamCard;
+import me.kall.narutooverlay.theme.Palette;
+import me.kall.narutooverlay.theme.Theme;
+import net.minecraft.client.KeyMapping;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.common.util.Lazy;
+import net.minecraftforge.event.TickEvent;
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.glfw.GLFW;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public final class RenderArgs {
+    private static final int DEFAULT_FPS_COOLDOWN = 20;
+    private static final int DEFAULT_GC_COOLDOWN = 20;
+    private static final int DEFAULT_RAM_COOLDOWN = 20;
+
+    private static final int DEFAULT_FPS_WINDOW = 1000;
+    private static final int MAX_FPS_WINDOW = 1_000_000;
+
+    public static final String DEFAULT_BACKGROUND_FOLDER = "narutooverlay";
+    public static final List<String> DEFAULT_BACKGROUND_ORDER = List.of("bg1.jpg", "bg2.jpg", "logo.jpg");
+    public static final String DEFAULT_BACKGROUND_IMAGE = DEFAULT_BACKGROUND_FOLDER + "/bg1.jpg";
+
+    public static final ForgeConfigSpec CONFIG;
+
+    public static final FpsCard FPS;
+    public static final GcCard GC;
+    public static final RamCard RAM;
+
+    public static final ForgeConfigSpec.IntValue FPS_COOLDOWN;
+    public static final ForgeConfigSpec.IntValue GC_COOLDOWN;
+    public static final ForgeConfigSpec.IntValue RAM_COOLDOWN;
+
+    public static final ForgeConfigSpec.IntValue FPS_WINDOW;
+
+    public static final ForgeConfigSpec.EnumValue<Theme> THEME;
+    public static final ForgeConfigSpec.BooleanValue DROP_SHADOW;
+    public static final ForgeConfigSpec.BooleanValue EQUAL_WIDTH;
+    public static final ForgeConfigSpec.BooleanValue DRAW_BACKPLANE;
+
+    public static final ForgeConfigSpec.BooleanValue SHIMMER;
+    public static final ForgeConfigSpec.DoubleValue SHIMMER_SPEED;
+    public static final ForgeConfigSpec.DoubleValue SHIMMER_SCALE;
+    public static final ForgeConfigSpec.DoubleValue SHIMMER_STRENGTH;
+    public static final ForgeConfigSpec.IntValue SHIMMER_FPS;
+    public static final ForgeConfigSpec.IntValue CONFIG_SHIMMER_FPS;
+    public static final ForgeConfigSpec.BooleanValue CACHE_SHIMMER;
+
+    public static final ForgeConfigSpec.DoubleValue TEXT_OFFSET_Y;
+
+    public static final ForgeConfigSpec.BooleanValue BACKPLANE_BORDER_OVERRIDE;
+    public static final ForgeConfigSpec.IntValue BACKPLANE_BORDER_RED;
+    public static final ForgeConfigSpec.IntValue BACKPLANE_BORDER_GREEN;
+    public static final ForgeConfigSpec.IntValue BACKPLANE_BORDER_BLUE;
+    public static final ForgeConfigSpec.IntValue BACKPLANE_BORDER_ALPHA;
+    public static final ForgeConfigSpec.DoubleValue BACKPLANE_BORDER_WIDTH;
+
+    public static final ForgeConfigSpec.ConfigValue<String> BACKGROUND_IMAGE;
+    public static final ForgeConfigSpec.ConfigValue<String> BACKGROUND_FOLDER;
+    public static final ForgeConfigSpec.ConfigValue<List<? extends String>> BACKGROUND_ORDER;
+    public static final ForgeConfigSpec.DoubleValue BACKGROUND_INTERVAL;
+    public static final ForgeConfigSpec.DoubleValue BACKGROUND_FADE;
+    public static final ForgeConfigSpec.DoubleValue BACKGROUND_DIM;
+    public static final ForgeConfigSpec.DoubleValue BACKGROUND_CROP_X;
+    public static final ForgeConfigSpec.DoubleValue BACKGROUND_CROP_Y;
+    public static final ForgeConfigSpec.DoubleValue BACKGROUND_CROP_WIDTH;
+    public static final ForgeConfigSpec.DoubleValue BACKGROUND_CROP_HEIGHT;
+
+    public static final Lazy<KeyMapping> RESET_KEY = Lazy.of(() -> new KeyMapping("key.narutooverlay.reset_text_args", GLFW.GLFW_KEY_UNKNOWN, "key.categories.narutooverlay"));
+
+    static {
+        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+
+        builder.push("Texts");
+        FPS = new FpsCard(builder);
+        GC = new GcCard(builder);
+        RAM = new RamCard(builder);
+        builder.pop();
+
+        builder.push("UpdateInterval");
+
+        FPS_COOLDOWN = builder
+                .comment("Number of client ticks between FPS information updates.")
+                .defineInRange("fps", DEFAULT_FPS_COOLDOWN, 1, Integer.MAX_VALUE);
+
+        GC_COOLDOWN = builder
+                .comment("Number of client ticks between garbage collector information updates.")
+                .defineInRange("gc", DEFAULT_GC_COOLDOWN, 1, Integer.MAX_VALUE);
+
+        RAM_COOLDOWN = builder
+                .comment("Number of client ticks between RAM information updates.")
+                .defineInRange("ram", DEFAULT_RAM_COOLDOWN, 1, Integer.MAX_VALUE);
+
+        builder.pop();
+
+        builder.push("Statistics");
+        builder.push("FPS");
+        FPS_WINDOW = builder
+                .comment(
+                        "Duration in milliseconds of the recent frame interval window used to calculate FPS statistics.",
+                        "A larger window smooths average and low-percentile FPS values, but makes them slower to reflect performance changes.",
+                        "A smaller window responds faster to changes, but produces less stable statistics.",
+                        "The instantaneous FPS value is always based on the latest frame interval."
+                )
+                .defineInRange("window", DEFAULT_FPS_WINDOW, 10, MAX_FPS_WINDOW);
+        builder.pop();
+        builder.pop();
+
+        builder.push("Quality");
+        THEME = builder
+                .comment(
+                        "Color theme of the overlay text and backplane.",
+                        "NARUTO: warm black, flame orange, gold and chakra-glow yellow with red accents, sampled from Kurama Chakra Mode art.",
+                        "CLASSIC: white text on a translucent gray backplane."
+                )
+                .defineEnum("theme", Theme.NARUTO);
+        DROP_SHADOW = builder
+                .comment("Whether to draw a shadow behind the text.")
+                .define("dropShadow", false);
+        EQUAL_WIDTH = builder
+                .comment("Whether all visible overlay cards use the width of the widest one, so stacked cards line up.")
+                .define("equalWidth", true);
+        SHIMMER = builder
+                .comment(
+                        "Sweep a golden chakra highlight across the overlay cards and the configuration screen text.",
+                        "Only themes with an accent color (NARUTO) are affected; CLASSIC stays static."
+                )
+                .define("Shimmerable", true);
+        SHIMMER_SPEED = builder
+                .comment("Speed multiplier of the text shimmer sweep.")
+                .defineInRange("textShimmerSpeed", 2.5D, 0.2D, 3.0D);
+        SHIMMER_SCALE = builder
+                .comment("Spatial frequency multiplier of the shimmer ripple; higher values create denser ripples.")
+                .defineInRange("textShimmerScale", 2.5D, 0.2D, 3.0D);
+        SHIMMER_STRENGTH = builder
+                .comment("Colour strength of the shimmer: 0 keeps the base colours, 1 uses the full ripple colours.")
+                .defineInRange("textShimmerStrength", 1.0D, 0.0D, 1.0D);
+        SHIMMER_FPS = builder
+                .comment(
+                        "How many times per second the HUD shimmer colours are recomputed.",
+                        "Lower values reduce CPU/GC work; 30 is visually smooth, 5-240 supported."
+                )
+                .defineInRange("textShimmerFps", 30, 5, 240);
+        CONFIG_SHIMMER_FPS = builder
+                .comment(
+                        "How many times per second the configuration screen shimmer is updated.",
+                        "Lower values reduce CPU work while the settings screen is open."
+                )
+                .defineInRange("configShimmerFps", 30, 5, 120);
+        CACHE_SHIMMER = builder
+                .comment(
+                        "Cache the HUD's recoloured glyph sequence between updates instead of rebuilding it every frame.",
+                        "Disable to compare against the old per-frame path; caching is recommended."
+                )
+                .define("textShimmerCache", true);
+        TEXT_OFFSET_Y = builder
+                .comment(
+                        "Vertical offset of the overlay card text inside its backplane, in GUI pixels.",
+                        "Increase it when the text sits too high; 0.5 is half a pixel."
+                )
+                .defineInRange("textOffsetY", 0.5D, -4.0D, 4.0D);
+
+        builder.push("Backplane");
+        DRAW_BACKPLANE = builder
+                .comment("Whether to draw a translucent background behind the text.")
+                .define("drawBackplane", true);
+        BACKPLANE_BORDER_WIDTH = builder
+                .comment("Rounded backplane border width in GUI pixels. Set to 0 to disable the border.")
+                .defineInRange("backplaneBorderWidth", 0.6D, 0D, 4D);
+        BACKPLANE_BORDER_OVERRIDE = builder
+                .comment("Use the border color channels below instead of the border color of the selected theme.")
+                .define("backplaneBorderOverride", false);
+        BACKPLANE_BORDER_RED = builder
+                .comment("Red channel of the backplane border color (0-255). Only used when backplaneBorderOverride is true.")
+                .defineInRange("backplaneBorderRed", 0, 0, 255);
+        BACKPLANE_BORDER_GREEN = builder
+                .comment("Green channel of the backplane border color (0-255). Only used when backplaneBorderOverride is true.")
+                .defineInRange("backplaneBorderGreen", 0, 0, 255);
+        BACKPLANE_BORDER_BLUE = builder
+                .comment("Blue channel of the backplane border color (0-255). Only used when backplaneBorderOverride is true.")
+                .defineInRange("backplaneBorderBlue", 255, 0, 255);
+        BACKPLANE_BORDER_ALPHA = builder
+                .comment("Alpha channel of the backplane border color (0-255). Only used when backplaneBorderOverride is true.")
+                .defineInRange("backplaneBorderAlpha", 255, 0, 255);
+        builder.pop();
+
+        builder.pop();
+
+        builder.push("ConfigScreen");
+        BACKGROUND_IMAGE = builder
+                .comment(
+                        "File name of the fallback configuration screen background, relative to the game directory.",
+                        "Used when backgroundFolder is empty; the configuration screen writes picked images there.",
+                        "Leave empty for no fallback background."
+                )
+                .define("backgroundImage", DEFAULT_BACKGROUND_IMAGE);
+        BACKGROUND_FOLDER = builder
+                .comment(
+                        "Folder that contains the configuration screen background pictures.",
+                        "The mod extracts its bundled pictures into this folder on startup; all pictures inside are shown as a slideshow.",
+                        "Relative paths are resolved against the game directory.",
+                        "Leave this empty to fall back to the single backgroundImage setting."
+                )
+                .define("backgroundFolder", DEFAULT_BACKGROUND_FOLDER);
+        BACKGROUND_ORDER = builder
+                .comment(
+                        "Playback order of the background pictures, as file names inside backgroundFolder.",
+                        "Listed pictures are shown first in this order; pictures that are not listed follow in alphabetical order.",
+                        "Leave the list empty to sort the whole folder by file name."
+                )
+                .defineListAllowEmpty("backgroundOrder", new ArrayList<>(DEFAULT_BACKGROUND_ORDER), element -> element instanceof String);
+        BACKGROUND_INTERVAL = builder
+                .comment("Seconds each background picture stays on screen.")
+                .defineInRange("backgroundInterval", 12.0D, 2.0D, 300.0D);
+        BACKGROUND_FADE = builder
+                .comment("Seconds of the cross-fade between two background pictures. Set to 0 to switch instantly.")
+                .defineInRange("backgroundFade", 0.6D, 0.0D, 3.0D);
+        BACKGROUND_DIM = builder
+                .comment("How strongly the configuration screen background image is darkened, 0 to 0.95.")
+                .defineInRange("backgroundDim", 0.55D, 0D, 0.95D);
+        builder.comment(
+                        "Visible region of the single fallback background image, relative to its size (0 to 1).",
+                        "Slideshow pictures ignore these values and are framed automatically.",
+                        "The screen uses these instead of rewriting the file, so the original picture is kept untouched."
+                ).push("Crop");
+        BACKGROUND_CROP_X = builder.defineInRange("x", 0.0D, 0D, 1D);
+        BACKGROUND_CROP_Y = builder.defineInRange("y", 0.0D, 0D, 1D);
+        BACKGROUND_CROP_WIDTH = builder.defineInRange("width", 1.0D, 0D, 1D);
+        BACKGROUND_CROP_HEIGHT = builder.defineInRange("height", 1.0D, 0D, 1D);
+        builder.pop();
+        builder.pop();
+
+        CONFIG = builder.build();
+    }
+
+    public static void tick(TickEvent.@NotNull ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+
+        boolean reset = false;
+        while (RESET_KEY.get().consumeClick()) reset = true;
+
+        if (reset) {
+            CardRegistry.resetPositions();
+            ConfigSaver.changed();
+        }
+
+        ConfigSaver.tick();
+    }
+
+    public static <T> void set(ForgeConfigSpec.@NotNull ConfigValue<T> config, T value) {
+        config.set(value);
+        ConfigSaver.changed();
+    }
+
+    public static @NotNull Palette palette() {
+        return THEME.get().palette();
+    }
+
+    public static int borderColor() {
+        if (BACKPLANE_BORDER_OVERRIDE.get()) {
+            return BACKPLANE_BORDER_ALPHA.get() << 24 | BACKPLANE_BORDER_RED.get() << 16 | BACKPLANE_BORDER_GREEN.get() << 8 | BACKPLANE_BORDER_BLUE.get();
+        }
+
+        return palette().border();
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\config\ui\background\NarutoJarResources.java =====
+package me.kall.narutooverlay.config.ui.background;
+
+import me.kall.narutooverlay.config.RenderArgs;
+import net.minecraftforge.fml.loading.FMLPaths;
+import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+public class NarutoJarResources {
+    public static final String FOLDER = RenderArgs.DEFAULT_BACKGROUND_FOLDER;
+    public static final List<String> NAMES = RenderArgs.DEFAULT_BACKGROUND_ORDER;
+
+    private static final List<Asset> ASSETS = List.of(
+            new Asset("bg1.jpg", "/assets/narutooverlay/textures/bg1.jpg"),
+            new Asset("bg2.jpg", "/assets/narutooverlay/textures/bg2.jpg"),
+            new Asset("logo.jpg", "/logo.jpg")
+    );
+
+    private record Asset(@NotNull String name, @NotNull String resource) {}
+
+    public static void install() {
+        Path folder = folder();
+        try {
+            Files.createDirectories(folder);
+        } catch (IOException ignored) {
+            return;
+        }
+
+        for (Asset asset : ASSETS) copy(asset, folder.resolve(asset.name()));
+    }
+
+    public static @NotNull Path folder() {
+        return FMLPaths.GAMEDIR.get().resolve(FOLDER);
+    }
+
+    public static @NotNull List<Path> files() {
+        List<Path> paths = new ArrayList<>(NAMES.size());
+        for (String name : NAMES) {
+            Path path = folder().resolve(name);
+            if (Files.isRegularFile(path)) paths.add(path);
+        }
+        return paths;
+    }
+
+    public static boolean available() {
+        return !files().isEmpty();
+    }
+
+    private static void copy(Asset asset, Path target) {
+        if (Files.exists(target)) return;
+
+        try (InputStream input = NarutoJarResources.class.getResourceAsStream(asset.resource())) {
+            if (input == null) return;
+            Files.copy(input, target);
+        } catch (IOException ignored) {}
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\config\ui\NarutoConfigScreen.java =====
+package me.kall.narutooverlay.config.ui;
+
+import icyllis.modernui.core.Context;
+import icyllis.modernui.graphics.Image;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.widget.*;
+import me.kall.narutooverlay.NarutoOverlay;
+import me.kall.narutooverlay.card.Card;
+import me.kall.narutooverlay.card.CardRegistry;
+import me.kall.narutooverlay.card.Field;
+import me.kall.narutooverlay.card.FieldConfig;
+import me.kall.narutooverlay.config.ConfigSaver;
+import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.config.ui.background.NarutoJarResources;
+import me.kall.narutooverlay.event.TextRelocation;
+import me.kall.narutooverlay.theme.Palette;
+import me.kall.narutooverlay.theme.Theme;
+import me.kall.narutoui.mui.background.*;
+import me.kall.narutoui.mui.choice.MuiChoiceGrid;
+import me.kall.narutoui.mui.choice.MuiDropdown;
+import me.kall.narutoui.mui.choice.MuiOption;
+import me.kall.narutoui.mui.factory.MuiWidgetFactory;
+import me.kall.narutoui.mui.field.MuiListEditor;
+import me.kall.narutoui.mui.field.MuiNumberField;
+import me.kall.narutoui.mui.field.MuiTextField;
+import me.kall.narutoui.mui.layout.MuiLayout;
+import me.kall.narutoui.mui.overlay.MuiColorPickerOverlay;
+import me.kall.narutoui.mui.overlay.MuiCropOverlay;
+import me.kall.narutoui.mui.overlay.MuiCropOverlayFactory;
+import me.kall.narutoui.mui.screen.*;
+import me.kall.narutoui.mui.shimmer.MuiShimmer;
+import me.kall.narutoui.mui.shimmer.MuiShimmerConfig;
+import me.kall.narutoui.mui.shimmer.MuiShimmerProfile;
+import me.kall.narutoui.mui.shimmer.MuiShimmerable;
+import me.kall.narutoui.mui.theme.MuiTheme;
+import me.kall.narutoui.mui.widget.*;
+import net.minecraft.SharedConstants;
+import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraftforge.client.ConfigScreenHandler;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLPaths;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.function.Supplier;
+
+import static me.kall.narutooverlay.config.RenderArgs.*;
+import static me.kall.narutoui.mui.layout.MuiControls.*;
+
+public final class NarutoConfigScreen {
+    private static final MuiConfigurableBackground BACKGROUND = MuiConfigurableBackground
+            .builder(
+                    new NarutoBackgroundSettings(),
+                    new MuiBackgroundLabels(
+                            "narutooverlay.config.background.picker",
+                            "narutooverlay.config.background.filter",
+                            "narutooverlay.config.background.pickerFailed",
+                            "narutooverlay.config.background.folder.picker",
+                            "narutooverlay.config.background.folder.failed",
+                            "narutooverlay.config.background.failed",
+                            "narutooverlay.config.background.saved",
+                            new MuiCropOverlay.Labels(
+                                    "narutooverlay.config.background.crop.title",
+                                    "narutooverlay.config.background.crop.hint",
+                                    "narutooverlay.config.background.confirm",
+                                    "narutooverlay.config.background.cancel"
+                            )
+                    ),
+                    new MuiBackgroundFiles(FMLPaths.GAMEDIR.get(), "narutooverlay-config-bg")
+            )
+            .cropFactory(new NarutoCropFactory())
+            .build();
+
+    private static final NarutoScreenHost HOST = new NarutoScreenHost();
+
+    public static void register(@NotNull FMLJavaModLoadingContext context) {
+        NarutoJarResources.install();
+        context.registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () -> new ConfigScreenHandler.ConfigScreenFactory((minecraft, screen) -> build(screen)));
+        MinecraftForge.EVENT_BUS.addListener(NarutoConfigScreen::onMouseButton);
+    }
+
+    private static @NotNull Screen build(@Nullable Screen previous) {
+        return MuiSettingsScreen.builder("NarutoOverlay")
+                .widgetFactory(NarutoShimmerFactory.INSTANCE)
+                .shimmerProfile(NarutoShimmerConfig.PROFILE)
+                .background(BACKGROUND)
+                .initialPage(0)
+                .shimmerNavigation()
+                .shimmerTitles()
+                .railHeader(context -> MuiLogo.create(context, MuiTheme.modern(context), "N").color(NarutoAccent.primary()).textColor(NarutoAccent.onPrimary()))
+                .railFooter(context -> MuiHintBadge.create(context, MuiTheme.modern(context), "narutooverlay.config.footer.escHint").color(NarutoAccent.primary()))
+                .onCreated(HOST::attach)
+                .onDestroyed(fragment -> HOST.attach(null))
+                .page("narutooverlay.config.nav.cards", "narutooverlay.config.cards.title", "narutooverlay.config.cards.subtitle", NarutoConfigScreen::buildCards)
+                .page("narutooverlay.config.nav.appearance", "narutooverlay.config.appearance.title", "narutooverlay.config.appearance.subtitle", NarutoConfigScreen::buildAppearance)
+                .page("narutooverlay.config.nav.about", "narutooverlay.config.about.title", "narutooverlay.config.about.subtitle", NarutoConfigScreen::buildAbout)
+                .create(previous);
+    }
+
+    private static void buildCards(@NotNull MuiSettingsPage page) {
+        page.shimmerAll().custom(ui -> {
+            Context context = ui.context();
+            MuiTheme theme = ui.theme();
+            MuiLayout content = ui.contentLayout();
+            boolean firstCard = true;
+
+            for (Card<?> card : CardRegistry.all()) {
+                String cardID = card.id().toLowerCase(Locale.ROOT);
+
+                MuiCollapsibleCard box = MuiCollapsibleCard.card(context, theme, "narutooverlay.config.card." + cardID, "narutooverlay.config.card." + cardID + ".summary", false);
+                MuiLayout body = box.body();
+
+                MuiNumberField x = MuiNumberField.create(context, theme, card.left()).bounds(0, Integer.MAX_VALUE).gravity(Gravity.CENTER).onChangeInt(card::setLeft);
+                MuiNumberField y = MuiNumberField.create(context, theme, card.top()).bounds(0, Integer.MAX_VALUE).gravity(Gravity.CENTER).onChangeInt(card::setTop);
+
+                Switch cardToggle = switchControl(context, theme);
+                cardToggle.setChecked(card.enabledValue().get());
+                cardToggle.setContentDescription("narutooverlay.config.cards.enabled");
+                cardToggle.setOnCheckedChangeListener((buttonView, isChecked) -> card.setEnabled(isChecked));
+
+                box.trailing(cardToggle);
+
+                Runnable sync = () -> {
+                    x.value(card.left());
+                    y.value(card.top());
+                };
+
+                LinearLayout.LayoutParams yLabelParams = wrap();
+                yLabelParams.setMargins(dp(context, 14), 0, 0, 0);
+
+                LinearLayout.LayoutParams fieldParams = new LinearLayout.LayoutParams(dp(context, 64), WRAP);
+                fieldParams.setMargins(dp(context, 6), 0, 0, 0);
+
+                MuiLayout cardRow = MuiLayout.row(context, theme).padding(0)
+                        .add(text(context, theme, "X", 12, theme.onSurfaceVariant()))
+                        .add(x, fieldParams)
+                        .add(text(context, theme, "Y", 12, theme.onSurfaceVariant()), yLabelParams)
+                        .add(y, fieldParams)
+                        .flexibleSpace()
+                        .add(MuiTextAction.create(context, theme, "narutooverlay.config.cards.resetPosition", () -> card.resetPosition(sync)));
+                body.add(cardRow);
+
+                int screenWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+                int screenHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+                int right = Math.max(8, screenWidth - card.lineWidth() - 8);
+                int bottom = Math.max(8, screenHeight - Minecraft.getInstance().font.lineHeight - 8);
+
+                MuiLayout presets = MuiLayout.row(context, theme)
+                        .padding(0)
+                        .spacing(6)
+                        .addWeighted(button(context, theme, "narutooverlay.config.cards.topLeft", true, view -> card.moveTo(8, 8, sync)), 1.0F)
+                        .addWeighted(button(context, theme, "narutooverlay.config.cards.topRight", true, view -> card.moveTo(right, 8, sync)), 1.0F)
+                        .addWeighted(button(context, theme, "narutooverlay.config.cards.bottomLeft", true, view -> card.moveTo(8, bottom, sync)), 1.0F)
+                        .addWeighted(button(context, theme, "narutooverlay.config.cards.bottomRight", true, view -> card.moveTo(right, bottom, sync)), 1.0F);
+
+                LinearLayout.LayoutParams presetParams = new LinearLayout.LayoutParams(MATCH, WRAP);
+                presetParams.topMargin = dp(context, 6);
+
+                body.add(presets, presetParams).divider();
+
+                boolean firstField = true;
+                for (Field<?> field : card.allFields()) {
+                    if (!firstField) body.divider();
+                    firstField = false;
+
+                    String fieldID = field.id();
+
+                    FieldConfig config = card.fieldConfig(fieldID);
+                    MuiLayout fieldRow = MuiLayout.row(context, theme).padding(0).add(text(context, theme, "narutooverlay.config.field." + fieldID.toLowerCase(Locale.ROOT), 13, theme.onSurface()), weight());
+
+                    LinearLayout.LayoutParams chipParams = wrap();
+                    chipParams.setMargins(dp(context, 8), 0, 0, 0);
+
+                    if (field.hasLabel()) fieldRow.add(MuiChip.create(context, theme, "narutooverlay.config.chip.label", config.showLabel()).onChanged(config::setShowLabel), chipParams);
+                    if (field.hasUnit()) fieldRow.add(MuiChip.create(context, theme, "narutooverlay.config.chip.unit", config.showUnit()).onChanged(config::setShowUnit), chipParams);
+
+                    Switch fieldToggle = switchControl(context, theme);
+                    fieldToggle.setChecked(config.enabled());
+                    fieldToggle.setOnCheckedChangeListener((buttonView, isChecked) -> config.setEnabled(isChecked));
+
+                    LinearLayout.LayoutParams toggleParams = wrap();
+                    toggleParams.setMargins(dp(context, 10), 0, 0, 0);
+                    fieldRow.add(fieldToggle, toggleParams);
+
+                    body.add(fieldRow);
+                }
+
+                MuiTextAction resetCard = MuiTextAction.create(context, theme, "narutooverlay.config.cards.resetCard", () -> {
+                    card.resetAll();
+                    HOST.reloadCurrentPage();
+                });
+
+                LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(WRAP, WRAP);
+                resetParams.topMargin = dp(context, 10);
+                body.add(resetCard, resetParams);
+
+                LinearLayout.LayoutParams boxParams = new LinearLayout.LayoutParams(MATCH, WRAP);
+                boxParams.setMargins(0, firstCard ? dp(context, 18) : 0, 0, dp(context, 12));
+                firstCard = false;
+
+                content.add(box, boxParams);
+            }
+
+            MuiTextAction resetAll = MuiTextAction.create(context, theme, "narutooverlay.config.cards.resetAll", () -> {
+                CardRegistry.resetAll();
+                ConfigSaver.changed();
+                HOST.reloadCurrentPage();
+            });
+
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(WRAP, WRAP);
+            params.topMargin = dp(context, 20);
+
+            content.add(resetAll, params);
+        });
+    }
+
+    private static void buildAppearance(@NotNull MuiSettingsPage page) {
+        page.shimmerAll()
+                .section("narutooverlay.config.appearance.theme", section -> section
+                        .choiceGridBound("narutooverlay.config.appearance.theme", null, Arrays.stream(Theme.values()).map(theme -> MuiOption.of(theme, theme.name()).preview((context, activeTheme) -> new ThemePreview(context, theme.palette()))).toList(), THEME, theme -> {
+                            set(THEME, theme);
+                            HOST.onThemeChanged();
+                        })
+                )
+                .section("narutooverlay.config.appearance.display", section -> {
+                    section.toggle("narutooverlay.config.appearance.dropShadow", "narutooverlay.config.appearance.dropShadow.desc", DROP_SHADOW::get, value -> set(DROP_SHADOW, value))
+                            .toggle("narutooverlay.config.appearance.equalWidth", "narutooverlay.config.appearance.equalWidth.desc", EQUAL_WIDTH::get, value -> set(EQUAL_WIDTH, value))
+                            .toggle("narutooverlay.config.appearance.drawBackplane", "narutooverlay.config.appearance.drawBackplane.desc", DRAW_BACKPLANE::get, value -> set(DRAW_BACKPLANE, value))
+                            .toggle("narutooverlay.config.appearance.shimmer", "narutooverlay.config.appearance.shimmer.desc", SHIMMER::get, value -> {
+                                set(SHIMMER, value);
+                                MuiShimmer.refresh();
+                            });
+                    if (!RenderArgs.palette().hasAccent()) disableLastRow(section);
+                })
+                .section("narutooverlay.config.appearance.shimmer", section -> {
+                    section.slider("narutooverlay.config.appearance.shimmerSpeed", "narutooverlay.config.appearance.shimmerSpeed.desc", 0.2D, 3.0D, 0.1D, SHIMMER_SPEED::get, value -> set(SHIMMER_SPEED, value), value -> String.format(Locale.ROOT, "%.1f", value))
+                            .slider("narutooverlay.config.appearance.shimmerDensity", "narutooverlay.config.appearance.shimmerDensity.desc", 0.2D, 3.0D, 0.1D, SHIMMER_SCALE::get, value -> set(SHIMMER_SCALE, value), value -> String.format(Locale.ROOT, "%.1f", value))
+                            .slider("narutooverlay.config.appearance.shimmerStrength", "narutooverlay.config.appearance.shimmerStrength.desc", 0.0D, 1.0D, 0.1D, SHIMMER_STRENGTH::get, value -> set(SHIMMER_STRENGTH, value), value -> String.format(Locale.ROOT, "%.1f", value))
+                            .slider("narutooverlay.config.appearance.shimmerFps", "narutooverlay.config.appearance.shimmerFps.desc", 5, 240, SHIMMER_FPS::get, value -> set(SHIMMER_FPS, value), Integer::toString)
+                            .slider("narutooverlay.config.appearance.configShimmerFps", "narutooverlay.config.appearance.configShimmerFps.desc", 5, 120, CONFIG_SHIMMER_FPS::get, value -> set(CONFIG_SHIMMER_FPS, value), Integer::toString)
+                            .toggle("narutooverlay.config.appearance.cacheShimmer", "narutooverlay.config.appearance.cacheShimmer.desc", CACHE_SHIMMER::get, value -> set(CACHE_SHIMMER, value));
+
+                    if (!RenderArgs.palette().hasAccent()) {
+                        disableAllRows(section);
+                        section.note("narutooverlay.config.appearance.shimmer.unavailable");
+                    }
+                })
+                .section("narutooverlay.config.appearance.backplane", section -> section
+                        .slider("narutooverlay.config.appearance.borderWidth", "narutooverlay.config.appearance.borderWidth.desc", 0.0D, 4.0D, 0.1D, BACKPLANE_BORDER_WIDTH::get, value -> set(BACKPLANE_BORDER_WIDTH, value), value -> String.format(Locale.ROOT, "%.1f", value))
+                        .toggle("narutooverlay.config.appearance.borderOverride", "narutooverlay.config.appearance.borderOverride.desc", BACKPLANE_BORDER_OVERRIDE::get, value -> set(BACKPLANE_BORDER_OVERRIDE, value))
+                        .customLayout(row -> {
+                            Context context = row.getContext();
+                            row.add(MuiColorField.create(context, MuiTheme.modern(context), "narutooverlay.config.appearance.borderColor", borderColor())
+                                    .buttonLabel("narutooverlay.config.appearance.pickColor")
+                                    .onPick(() -> {
+                                        Context pickerContext = HOST.requireContext();
+                                        MuiShimmerProfile.withCurrent(
+                                                NarutoShimmerConfig.PROFILE,
+                                                () -> withFactory(
+                                                        NarutoShimmerFactory.INSTANCE,
+                                                        () -> HOST.showOverlay(
+                                                                new MuiColorPickerOverlay(
+                                                                        pickerContext,
+                                                                        MuiTheme.modern(pickerContext).withPrimary(NarutoAccent.primary()),
+                                                                        borderColor(),
+                                                                        new MuiColorPickerOverlay.Labels(
+                                                                                "narutooverlay.config.color.title",
+                                                                                "narutooverlay.config.color.brightness",
+                                                                                "narutooverlay.config.color.alpha",
+                                                                                "narutooverlay.config.color.apply",
+                                                                                "narutooverlay.config.color.cancel"
+                                                                        ),
+                                                                        argb -> {
+                                                                            BACKPLANE_BORDER_OVERRIDE.set(true);
+                                                                            BACKPLANE_BORDER_RED.set((argb >> 16) & 0xFF);
+                                                                            BACKPLANE_BORDER_GREEN.set((argb >> 8) & 0xFF);
+                                                                            BACKPLANE_BORDER_BLUE.set(argb & 0xFF);
+                                                                            BACKPLANE_BORDER_ALPHA.set((argb >>> 24) & 0xFF);
+                                                                            ConfigSaver.changed();
+                                                                            HOST.reloadCurrentPage();
+                                                                        })
+                                                        )
+                                                )
+                                        );
+                                    }), fill());
+                        })
+                )
+                .section("narutooverlay.config.appearance.performance", section -> section
+                        .number("narutooverlay.config.appearance.fpsInterval", "narutooverlay.config.appearance.fpsInterval.desc", 1, 200, FPS_COOLDOWN::get, value -> set(FPS_COOLDOWN, value))
+                        .number("narutooverlay.config.appearance.gcInterval", "narutooverlay.config.appearance.gcInterval.desc", 1, 200, GC_COOLDOWN::get, value -> set(GC_COOLDOWN, value))
+                        .number("narutooverlay.config.appearance.ramInterval", "narutooverlay.config.appearance.ramInterval.desc", 1, 200, RAM_COOLDOWN::get, value -> set(RAM_COOLDOWN, value))
+                        .number("narutooverlay.config.appearance.fpsWindow", "narutooverlay.config.appearance.fpsWindow.desc", 10, 1000, FPS_WINDOW::get, value -> set(FPS_WINDOW, value))
+                )
+        ;
+
+    }
+
+    private static void disableLastRow(@NotNull MuiSettingsSection section) {
+        LinearLayout card = section.card();
+        if (card.getChildCount() == 0) return;
+        setEnabledRecursive(card.getChildAt(card.getChildCount() - 1), false);
+    }
+
+    private static void disableAllRows(@NotNull MuiSettingsSection section) {
+        LinearLayout card = section.card();
+        for (int i = 0; i < card.getChildCount(); i++) {
+            setEnabledRecursive(card.getChildAt(i), false);
+        }
+    }
+
+    private static void setEnabledRecursive(@NotNull View view, boolean enabled) {
+        view.setEnabled(enabled);
+        if (view instanceof ViewGroup group) {
+            for (int i = 0; i < group.getChildCount(); i++) {
+                setEnabledRecursive(group.getChildAt(i), enabled);
+            }
+        }
+    }
+
+    private static void buildAbout(@NotNull MuiSettingsPage page) {
+        Path path = FMLPaths.CONFIGDIR.get().resolve("narutooverlay-client.toml");
+
+        page.shimmerAll()
+                .section("narutooverlay.config.about.info", section -> section
+                        .value("narutooverlay.config.about.version", ModList.get().getModContainerById(NarutoOverlay.MOD_ID)
+                                .map(modContainer -> modContainer.getModInfo().getVersion().toString())
+                                .orElse("?")
+                        )
+                        .value("narutooverlay.config.about.environment", NarutoOverlay.ENV + " · " + SharedConstants.getCurrentVersion().getName() + " · " + I18n.get("narutooverlay.config.about.clientOnly"))
+                )
+                .section("narutooverlay.config.about.background", section -> {
+                    String folder = BACKGROUND.state().folder();
+                    int count = BACKGROUND.images().size();
+
+                    section
+                            .value("narutooverlay.config.background.folder", folder.isBlank() ? I18n.get("narutooverlay.config.background.folder.none") : folder)
+                            .text("narutooverlay.config.background.folder.hint")
+                            .customLayout(row -> {
+                                Context context = row.getContext();
+                                MuiTheme theme = row.theme();
+
+                                Button choose = button(context, theme, "narutooverlay.config.background.folder.choose", true, view -> BACKGROUND.chooseBackgroundFolder());
+                                Button clear = button(context, theme, "narutooverlay.config.background.folder.clear", true, view -> BACKGROUND.clearBackgroundFolder());
+                                clear.setEnabled(!folder.isBlank());
+
+                                row.add(
+                                        MuiLayout
+                                                .row(context, theme)
+                                                .padding(0)
+                                                .space(8)
+                                                .addWeighted(choose, 1.0F)
+                                                .addWeighted(clear, 1.0F)
+                                        , fill()
+                                );
+                            })
+                            .value("narutooverlay.config.background.images", count == 0 ? I18n.get("narutooverlay.config.background.images.empty") : String.valueOf(count))
+                            .slider("narutooverlay.config.background.interval", "narutooverlay.config.background.interval.desc", 2.0D, 300.0D, 0.1D, BACKGROUND.state()::interval, BACKGROUND::setBackgroundInterval, value -> String.format(Locale.ROOT, "%.1f", value))
+                            .slider("narutooverlay.config.background.fade", "narutooverlay.config.background.fade.desc", 0.0D, 3.0D, 0.1D, () -> BACKGROUND.state().fade(), BACKGROUND::setBackgroundFade, value -> String.format(Locale.ROOT, "%.1f", value))
+                            .slider("narutooverlay.config.background.dim", "narutooverlay.config.background.dim.desc", 0.0D, 1.0D, 0.1D, () -> BACKGROUND.state().dim(), BACKGROUND::setBackgroundDim, value -> String.format(Locale.ROOT, "%.1f", value));
+                })
+                .section("narutooverlay.config.about.config", section -> section
+                        .value("narutooverlay.config.about.path", path.toString())
+                        .customLayout(row -> {
+                            Context context = row.getContext();
+                            MuiTheme theme = row.theme();
+                            MuiLayout actions = MuiLayout.row(context, theme).padding(0);
+
+                            MuiTextAction copy = MuiTextAction.create(context, theme, "narutooverlay.config.about.copyPath");
+                            copy.onClick(() -> runCopy(path, copy));
+
+                            MuiTextAction open = MuiTextAction.create(context, theme, "narutooverlay.config.about.openFolder", () -> runOpen(path));
+
+                            actions.add(copy, weight());
+
+                            LinearLayout.LayoutParams openParams = wrap();
+                            openParams.leftMargin = dp(context, 12);
+
+                            actions.add(open, openParams);
+
+                            row.add(actions, fill());
+                        }))
+                .section("narutooverlay.config.about.usage", section -> section
+                        .note("narutooverlay.config.about.hint.drag", "narutooverlay.config.about.hint.drag.desc")
+                        .note("narutooverlay.config.about.hint.merge", "narutooverlay.config.about.hint.merge.desc")
+                        .note("narutooverlay.config.about.hint.split", "narutooverlay.config.about.hint.split.desc")
+                        .note("narutooverlay.config.about.hint.open", "narutooverlay.config.about.hint.open.desc")
+                        .note("narutooverlay.config.about.hint.reset", "narutooverlay.config.about.hint.reset.desc")
+                )
+                .custom(context -> {
+                    TextView footer = text(context.context(), context.theme(), "narutooverlay.config.about.footer", 11, context.theme().onSurfaceVariant());
+                    footer.setGravity(Gravity.CENTER_HORIZONTAL);
+
+                    LinearLayout.LayoutParams params = fill();
+                    params.topMargin = dp(context.context(), 28);
+
+                    context.content().addView(footer, params);
+                });
+    }
+
+    private static void runCopy(@NotNull Path path, @NotNull MuiTextAction copy) {
+        Minecraft.getInstance().keyboardHandler.setClipboard(path.toString());
+        copy.flash("narutooverlay.config.about.copied", 1000);
+    }
+
+    private static void runOpen(@NotNull Path path) {
+        Path absolute = path.toAbsolutePath();
+        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+
+        try {
+            if (absolute.toFile().isFile() && os.contains("win")) {
+                new ProcessBuilder("explorer.exe", "/select," + absolute).start();
+                return;
+            }
+            if (absolute.toFile().isFile() && os.contains("mac")) {
+                new ProcessBuilder("open", "-R", absolute.toString()).start();
+                return;
+            }
+        } catch (Throwable ignored) {}
+
+        try {
+            Util.getPlatform().openFile(absolute.getParent().toFile());
+        } catch (Throwable ignored) {}
+    }
+
+    private static void onMouseButton(InputEvent.MouseButton.@NotNull Pre event) {
+        if (event.getButton() != GLFW.GLFW_MOUSE_BUTTON_RIGHT) return;
+        if (event.getAction() != GLFW.GLFW_PRESS) return;
+
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!(minecraft.screen instanceof ChatScreen)) return;
+
+        Card<?> card = TextRelocation.pick(TextRelocation.mouseX(), TextRelocation.mouseY());
+        if (card == null) return;
+
+        event.setCanceled(true);
+        minecraft.setScreen(build(minecraft.screen));
+    }
+
+    static final class NarutoBackgroundSettings implements MuiBackgroundSettings {
+        @Override
+        public @NotNull MuiBackgroundState load() {
+            List<String> order = new ArrayList<>();
+            for (String name : BACKGROUND_ORDER.get()) {
+                if (name != null) order.add(name);
+            }
+
+            return new MuiBackgroundState(
+                    BACKGROUND_IMAGE.get(),
+                    BACKGROUND_FOLDER.get(),
+                    order,
+                    BACKGROUND_INTERVAL.get(),
+                    BACKGROUND_FADE.get(),
+                    BACKGROUND_DIM.get(),
+                    new MuiCrop(
+                            BACKGROUND_CROP_X.get(),
+                            BACKGROUND_CROP_Y.get(),
+                            BACKGROUND_CROP_WIDTH.get(),
+                            BACKGROUND_CROP_HEIGHT.get()
+                    )
+            );
+        }
+
+        @Override
+        public void save(@NotNull MuiBackgroundState state) {
+            BACKGROUND_IMAGE.set(state.image());
+            BACKGROUND_FOLDER.set(state.folder());
+            BACKGROUND_ORDER.set(new ArrayList<>(state.order()));
+            BACKGROUND_INTERVAL.set(state.interval());
+            BACKGROUND_FADE.set(state.fade());
+            BACKGROUND_DIM.set(state.dim());
+
+            MuiCrop crop = state.crop();
+            BACKGROUND_CROP_X.set(crop.x());
+            BACKGROUND_CROP_Y.set(crop.y());
+            BACKGROUND_CROP_WIDTH.set(crop.width());
+            BACKGROUND_CROP_HEIGHT.set(crop.height());
+            ConfigSaver.changed();
+        }
+    }
+
+    static final class NarutoCropFactory implements MuiCropOverlayFactory {
+        @Override
+        public @NotNull MuiCropOverlay create(@NotNull Context context, @NotNull Image image, int imageWidth, int imageHeight, float targetAspect, MuiCropOverlay.@NotNull Labels labels, MuiCropOverlay.@NotNull Listener listener) {
+            Supplier<MuiCropOverlay> overlay = () -> new MuiCropOverlay(context, MuiTheme.modern(context).withPrimary(NarutoAccent.primary()), image, imageWidth, imageHeight, targetAspect, labels, listener);
+            return MuiShimmerProfile.withCurrent(NarutoShimmerConfig.PROFILE, () -> withFactory(NarutoShimmerFactory.INSTANCE, overlay));
+        }
+    }
+
+    static class NarutoScreenHost implements MuiScreenHost {
+        private @Nullable MuiConfigFragment fragment;
+
+        public void attach(@Nullable MuiConfigFragment fragment) {
+            this.fragment = fragment;
+        }
+
+        @Override
+        public @NotNull Context requireContext() {
+            MuiConfigFragment current = this.fragment;
+            if (current == null) throw new IllegalStateException("Config screen is not attached");
+            return current.requireContext();
+        }
+
+        @Override
+        public void showOverlay(@NotNull View overlay) {
+            MuiConfigFragment current = this.fragment;
+            if (current != null) current.showOverlay(overlay);
+        }
+
+        @Override
+        public void removeOverlay(@NotNull View overlay) {
+            MuiConfigFragment current = this.fragment;
+            if (current != null) current.removeOverlay(overlay);
+        }
+
+        @Override
+        public void reloadCurrentPage() {
+            MuiConfigFragment current = this.fragment;
+            if (current != null) current.reloadCurrentPage();
+        }
+
+        @Override
+        public void onThemeChanged() {
+            this.reloadCurrentPage();
+            ConfigSaver.changed();
+        }
+    }
+
+    static class NarutoShimmerConfig implements MuiShimmerConfig {
+        public static final MuiShimmerProfile PROFILE = MuiShimmerProfile.create(new NarutoShimmerConfig());
+
+        @Override
+        public boolean enabled() {
+            return SHIMMER.get();
+        }
+
+        @Override
+        public boolean hasAccent() {
+            return palette().hasAccent();
+        }
+
+        @Override
+        public int fps() {
+            return CONFIG_SHIMMER_FPS.get();
+        }
+
+        @Override
+        public double speed() {
+            return SHIMMER_SPEED.get();
+        }
+
+        @Override
+        public double scale() {
+            return SHIMMER_SCALE.get();
+        }
+
+        @Override
+        public double strength() {
+            return SHIMMER_STRENGTH.get();
+        }
+
+        @Override
+        public int @NotNull [] ramp() {
+            Palette palette = palette();
+            return new int[]{
+                    0xFFFFFFFF,
+                    palette.warn() | 0xFF000000,
+                    palette.accent() | 0xFF000000,
+                    palette.label() | 0xFF000000,
+                    palette.critical() | 0xFF000000,
+                    palette.label() | 0xFF000000,
+                    palette.accent() | 0xFF000000,
+                    palette.warn() | 0xFF000000,
+                    0xFFFFFFFF
+            };
+        }
+    }
+
+    static class NarutoShimmerFactory implements MuiWidgetFactory {
+        public static final MuiWidgetFactory SHIMMER = MuiWidgetFactory.shimmer();
+        public static final NarutoShimmerFactory INSTANCE = new NarutoShimmerFactory();
+
+        @Override
+        public @NotNull TextView text(@NotNull Context context, @NotNull CharSequence text, float size, int color) {
+            return SHIMMER.text(context, text, size, color);
+        }
+
+        @Override
+        public @NotNull TextView text(@NotNull Context context, @NotNull CharSequence text, float size, int color, @NotNull MuiShimmerable marker) {
+            return SHIMMER.text(context, text, size, color, marker);
+        }
+
+        @Override
+        public @NotNull Switch switchControl(@NotNull Context context, @NotNull MuiTheme theme) {
+            return SHIMMER.switchControl(context, naruto(theme));
+        }
+
+        @Override
+        public @NotNull Switch switchControl(@NotNull Context context, @NotNull MuiTheme theme, @NotNull MuiShimmerable marker) {
+            return SHIMMER.switchControl(context, naruto(theme), marker);
+        }
+
+        @Override
+        public @NotNull SeekBar slider(@NotNull Context context, @NotNull MuiTheme theme, int max, int progress) {
+            return SHIMMER.slider(context, naruto(theme), max, progress);
+        }
+
+        @Override
+        public @NotNull SeekBar slider(@NotNull Context context, @NotNull MuiTheme theme, int max, int progress, @NotNull MuiShimmerable marker) {
+            return SHIMMER.slider(context, naruto(theme), max, progress, marker);
+        }
+
+        @Override
+        public @NotNull Button button(@NotNull Context context, @NotNull MuiTheme theme, @NotNull CharSequence label, boolean outlined, View.@NotNull OnClickListener onClick) {
+            return SHIMMER.button(context, naruto(theme), label, outlined, onClick);
+        }
+
+        @Override
+        public @NotNull Button button(@NotNull Context context, @NotNull MuiTheme theme, @NotNull CharSequence label, boolean outlined, View.@NotNull OnClickListener onClick, @NotNull MuiShimmerable marker) {
+            return SHIMMER.button(context, naruto(theme), label, outlined, onClick, marker);
+        }
+
+        @Override
+        public @NotNull CheckBox checkBox(@NotNull Context context, @NotNull MuiTheme theme, @NotNull MuiShimmerable marker) {
+            return SHIMMER.checkBox(context, naruto(theme), marker);
+        }
+
+        @Override
+        public @NotNull RadioButton radioButton(@NotNull Context context, @NotNull MuiTheme theme, @NotNull MuiShimmerable marker) {
+            return SHIMMER.radioButton(context, naruto(theme), marker);
+        }
+
+        @Override
+        public @NotNull ProgressBar progressBar(@NotNull Context context, @NotNull MuiTheme theme, @NotNull MuiShimmerable marker) {
+            return SHIMMER.progressBar(context, naruto(theme), marker);
+        }
+
+        @Override
+        public @NotNull MuiTextField textField(@NotNull Context context, @NotNull MuiTheme theme, @NotNull CharSequence text) {
+            return SHIMMER.textField(context, naruto(theme), text);
+        }
+
+        @Override
+        public @NotNull MuiNumberField numberField(@NotNull Context context, @NotNull MuiTheme theme, long value) {
+            return SHIMMER.numberField(context, naruto(theme), value);
+        }
+
+        @Override
+        public @NotNull <T> MuiDropdown<T> dropdown(@NotNull Context context, @NotNull MuiTheme theme, @NotNull List<MuiOption<T>> muiOptions) {
+            return SHIMMER.dropdown(context, naruto(theme), muiOptions);
+        }
+
+        @Override
+        public @NotNull <T> MuiChoiceGrid<T> choiceGrid(@NotNull Context context, @NotNull MuiTheme theme, @NotNull List<MuiOption<T>> muiOptions) {
+            return SHIMMER.choiceGrid(context, naruto(theme), muiOptions);
+        }
+
+        @Override
+        public @NotNull MuiListEditor listEditor(@NotNull Context context, @NotNull MuiTheme theme, @NotNull List<String> values) {
+            return SHIMMER.listEditor(context, naruto(theme), values);
+        }
+
+        private static @NotNull MuiTheme naruto(@NotNull MuiTheme theme) {
+            return theme.withPrimary(NarutoAccent.primary()).withOnPrimary(0xFF000000);
+        }
+    }
+
+    static final class NarutoAccent {
+        public static int primary() {
+            Palette palette = palette();
+            return palette.hasAccent() ? palette.border() | 0xFF000000 : 0xFFFFFFFF;
+        }
+
+        public static int onPrimary() {
+            return palette().hasAccent() ? 0xFF2A1400 : 0xFF16171C;
+        }
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\config\ui\NarutoUiGate.java =====
+package me.kall.narutooverlay.config.ui;
+
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+
+public class NarutoUiGate {
+    public static void integrate(FMLJavaModLoadingContext context) {
+        NarutoConfigScreen.register(context);
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\config\ui\ThemePreview.java =====
+package me.kall.narutooverlay.config.ui;
+
+import icyllis.modernui.core.Context;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.View;
+import icyllis.modernui.widget.LinearLayout;
+import icyllis.modernui.widget.TextView;
+import me.kall.narutooverlay.theme.Palette;
+import me.kall.narutoui.mui.layout.MuiControls;
+import me.kall.narutoui.mui.shimmer.MuiShimmer;
+import me.kall.narutoui.mui.shimmer.MuiShimmerContainer;
+import me.kall.narutoui.mui.shimmer.MuiShimmerProfile;
+import me.kall.narutoui.mui.shimmer.MuiShimmerScope;
+import me.kall.narutoui.mui.shimmer.MuiShimmerable;
+import me.kall.narutoui.mui.shimmer.ShimmerTarget;
+import me.kall.narutoui.mui.shimmer.widget.ShimmerTextView;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * A miniature overlay card used by the theme picker. It follows the HUD card layout: a rounded
+ * backplane, an optional vertical accent strip, and three stacked metric rows.
+ * <p>
+ * Themes with an accent color (NARUTO) use shimmer-aware text and bars. Themes without an accent
+ * (CLASSIC) deliberately use plain white text and static bars so the preview keeps its own palette.
+ */
+public final class ThemePreview extends LinearLayout implements MuiShimmerContainer {
+    /** Whether this preview should participate in shimmer. */
+    private final boolean shimmerText;
+
+    /**
+     * Creates a preview for one palette.
+     *
+     * @param context the screen context
+     * @param palette the candidate palette
+     */
+    public ThemePreview(@NotNull Context context, @NotNull Palette palette) {
+        super(context);
+        this.shimmerText = palette.hasAccent();
+        this.setOrientation(HORIZONTAL);
+        this.setGravity(Gravity.CENTER_VERTICAL);
+        this.setMinimumHeight(MuiControls.dp(context, 76));
+
+        ShapeDrawable background = new ShapeDrawable();
+        background.setCornerRadius(MuiControls.dp(context, 7));
+        background.setColor(palette.backplane());
+        background.setStroke(Math.max(1, MuiControls.dp(context, 1)), palette.border());
+        this.setBackground(background);
+
+        if (palette.hasAccent()) {
+            View accent = this.bar(context, palette.accent(), 60, 2);
+            LinearLayout.LayoutParams accentParams = new LinearLayout.LayoutParams(MuiControls.dp(context, 3), MuiControls.dp(context, 60));
+            accentParams.leftMargin = MuiControls.dp(context, 4);
+            accentParams.rightMargin = MuiControls.dp(context, 6);
+            this.addView(accent, accentParams);
+        }
+
+        LinearLayout content = new LinearLayout(context);
+        content.setOrientation(VERTICAL);
+        content.setPadding(MuiControls.dp(context, 8), MuiControls.dp(context, 6), MuiControls.dp(context, 8), MuiControls.dp(context, 6));
+
+        int ramColor = opaque(palette.hasAccent() ? palette.warn() : palette.normal());
+        content.addView(this.field(context, palette, "FPS", "144", "fps", opaque(palette.normal())), this.rowParams(context));
+        content.addView(this.separator(context, opaque(palette.separator())), this.separatorParams(context));
+        content.addView(this.field(context, palette, "GC", "12", "ms", opaque(palette.normal())), this.rowParams(context));
+        content.addView(this.separator(context, opaque(palette.separator())), this.separatorParams(context));
+        content.addView(this.field(context, palette, "RAM", "62", "%", ramColor), this.rowParams(context));
+
+        this.addView(content, new LinearLayout.LayoutParams(0, MuiControls.WRAP, 1.0F));
+    }
+
+    @Override
+    public void setShimmerable(@NotNull MuiShimmerable marker) {
+        if (!this.shimmerText) return;
+
+        for (int i = 0; i < this.getChildCount(); i++) {
+            MuiShimmerScope.apply(this.getChildAt(i), marker);
+        }
+        MuiShimmer.refresh();
+    }
+
+    private static int opaque(int color) {
+        return color | 0xFF000000;
+    }
+
+    private @NotNull View field(
+            @NotNull Context context,
+            @NotNull Palette palette,
+            @NotNull String label,
+            @NotNull String value,
+            @NotNull String unit,
+            int valueColor
+    ) {
+        LinearLayout row = new LinearLayout(context);
+        row.setOrientation(HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+
+        row.addView(this.text(context, label, 9, opaque(palette.label())), MuiControls.wrap());
+
+        LinearLayout.LayoutParams valueParams = MuiControls.wrap();
+        valueParams.leftMargin = MuiControls.dp(context, 5);
+        row.addView(this.text(context, value, 11, valueColor), valueParams);
+
+        TextView unitView = this.text(context, unit, 8, opaque(palette.unit()));
+        LinearLayout.LayoutParams unitParams = MuiControls.wrap();
+        unitParams.leftMargin = MuiControls.dp(context, 2);
+        row.addView(unitView, unitParams);
+
+        return row;
+    }
+
+    private @NotNull TextView text(@NotNull Context context, @NotNull String text, float size, int color) {
+        TextView view = this.shimmerText ? new ShimmerTextView(context) : new TextView(context);
+        view.setText(text);
+        view.setTextSize(size);
+        view.setTextColor(color);
+        return view;
+    }
+
+    private @NotNull View bar(@NotNull Context context, int color, int heightDp, int cornerRadiusDp) {
+        if (this.shimmerText) return new PreviewBar(context, color, heightDp, cornerRadiusDp);
+
+        View bar = new View(context);
+        ShapeDrawable background = new ShapeDrawable();
+        background.setCornerRadius(MuiControls.dp(context, cornerRadiusDp));
+        background.setColor(color);
+        bar.setBackground(background);
+        return bar;
+    }
+
+    private @NotNull View separator(@NotNull Context context, int color) {
+        return this.bar(context, color, 1, 0);
+    }
+
+    private @NotNull LinearLayout.LayoutParams separatorParams(@NotNull Context context) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(MuiControls.MATCH, Math.max(1, MuiControls.dp(context, 1)));
+        params.topMargin = MuiControls.dp(context, 2);
+        params.bottomMargin = MuiControls.dp(context, 2);
+        return params;
+    }
+
+    private @NotNull LinearLayout.LayoutParams rowParams(@NotNull Context context) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(MuiControls.MATCH, MuiControls.WRAP);
+        params.topMargin = MuiControls.dp(context, 2);
+        params.bottomMargin = MuiControls.dp(context, 2);
+        return params;
+    }
+
+    /**
+     * A tiny rounded bar that participates in the shared shimmer instead of using a static drawable.
+     */
+    private static final class PreviewBar extends View implements ShimmerTarget {
+        private final Paint paint = new Paint();
+        private final MuiShimmerProfile profile;
+        private final int cornerRadius;
+        private final int baseColor;
+        private MuiShimmerable shimmerable = MuiShimmerable.NEVER;
+
+        PreviewBar(@NotNull Context context, int color, int heightDp, int cornerRadiusDp) {
+            super(context);
+            this.profile = MuiShimmerProfile.current();
+            this.baseColor = color;
+            this.cornerRadius = MuiControls.dp(context, cornerRadiusDp);
+            this.paint.setAntiAlias(true);
+            this.paint.setColor(color);
+            this.setMinimumHeight(MuiControls.dp(context, heightDp));
+        }
+
+        @Override
+        protected void onDraw(@NotNull Canvas canvas) {
+            if (this.getWidth() <= 0 || this.getHeight() <= 0) return;
+
+            if (this.cornerRadius > 0) {
+                canvas.drawRoundRect(0.0F, 0.0F, this.getWidth(), this.getHeight(), this.cornerRadius, this.paint);
+            } else {
+                canvas.drawRect(0.0F, 0.0F, this.getWidth(), this.getHeight(), this.paint);
+            }
+        }
+
+        @Override
+        public int shimmerBaseColor() {
+            return this.baseColor;
+        }
+
+        @Override
+        public void applyShimmerColor(int color) {
+            this.paint.setColor(color);
+            this.invalidate();
+        }
+
+        @Override
+        public void applyBaseColor() {
+            this.paint.setColor(this.baseColor);
+            this.invalidate();
+        }
+
+        @Override
+        public boolean shimmerEnabled() {
+            return this.shimmerable.shimmer() && this.isAttachedToWindow();
+        }
+
+        @Override
+        public void setShimmerable(@NotNull MuiShimmerable marker) {
+            this.shimmerable = marker;
+            MuiShimmer.refresh();
+        }
+
+        @Override
+        public @NotNull MuiShimmerProfile shimmerProfile() {
+            return this.profile;
+        }
+
+        @Override
+        public @NotNull View shimmerHost() {
+            return this;
+        }
+
+        @Override
+        protected void onAttachedToWindow() {
+            super.onAttachedToWindow();
+            MuiShimmer.attach(this);
+        }
+
+        @Override
+        protected void onDetachedFromWindow() {
+            MuiShimmer.detach(this);
+            super.onDetachedFromWindow();
+        }
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\event\api\FpsUpdateEvent.java =====
+package me.kall.narutooverlay.event.api;
+
+import net.minecraftforge.eventbus.api.Event;
+
+public final class FpsUpdateEvent extends Event {
+    public final double inst, min, avg, low;
+
+    public FpsUpdateEvent(double inst, double min, double avg, double low) {
+        this.inst = inst;
+        this.min = min;
+        this.avg = avg;
+        this.low = low;
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\event\api\RAMUpdateEvent.java =====
+package me.kall.narutooverlay.event.api;
+
+import net.minecraftforge.eventbus.api.Event;
+
+public final class RAMUpdateEvent extends Event {
+    public final long max, total, used;
+
+    public RAMUpdateEvent(long max, long total, long used) {
+        this.max = max;
+        this.total = total;
+        this.used = used;
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\event\api\TaskRegistryEvent.java =====
+package me.kall.narutooverlay.event.api;
+
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.fml.event.IModBusEvent;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.function.BooleanSupplier;
+import java.util.function.IntSupplier;
+import java.util.List;
+
+public final class TaskRegistryEvent extends Event implements IModBusEvent {
+    public static final TaskRegistryEvent INSTANCE = new TaskRegistryEvent();
+
+    private static final List<Task> TASKS = new ObjectArrayList<>();
+
+    public void register(IntSupplier interval, BooleanSupplier active, Runnable task) {
+        TASKS.add(new Task(task, interval, active));
+    }
+
+    public static void update(TickEvent.@NotNull ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+        for (Task task : TASKS) {
+            if (task.check()) task.run();
+        }
+    }
+
+    static final class Task implements Runnable {
+        final Runnable task;
+        final IntSupplier interval;
+        final BooleanSupplier active;
+        int cooldown;
+
+        Task(Runnable task, IntSupplier interval, BooleanSupplier active) {
+            this.task = task;
+            this.interval = interval;
+            this.active = active;
+        }
+
+        boolean check() {
+            if (!this.active.getAsBoolean()) {
+                this.cooldown = Integer.MAX_VALUE - 1;
+                return false;
+            }
+
+            return ++this.cooldown >= this.interval.getAsInt();
+        }
+
+        @Override
+        public void run() {
+            this.cooldown = 0;
+            this.task.run();
+        }
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\event\FpsTracker.java =====
+package me.kall.narutooverlay.event;
+
+import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.event.api.*;
+import me.kall.narutooverlay.event.api.FpsUpdateEvent;
+import me.kall.narutooverlay.event.api.TaskRegistryEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayDeque;
+import java.util.Arrays;
+
+public final class FpsTracker {
+    private static final double NANOS = 1_000_000_000.0D;
+    private static final long NANOS_PER_MILLISECOND = 1_000_000L;
+
+    private static final ArrayDeque<FrameInterval> intervals = new ArrayDeque<>();
+
+    private static long total = 0L;
+
+    private static long last = 0L;
+
+    public static void listen(@NotNull TaskRegistryEvent event) {
+        event.register(RenderArgs.FPS_COOLDOWN::get, RenderArgs.FPS::active, () -> {
+            pruneWindow(System.nanoTime(), RenderArgs.FPS_WINDOW.get());
+            if (intervals.isEmpty()) return;
+
+            int size = intervals.size();
+            double inst = NANOS / (double) intervals.peekLast().interval;
+            double avg = NANOS * (double) size / (double) total;
+
+            if (size < 10) return;
+
+            long[] sortedIntervals = new long[size];
+            int index = 0;
+            for (FrameInterval interval : intervals) sortedIntervals[index++] = interval.interval;
+            Arrays.sort(sortedIntervals);
+            double min = NANOS / (double) sortedIntervals[size - 1];
+
+            int lowCount = Math.max(1, (int) Math.ceil(size * 0.01D));
+
+            double low = 0.0D;
+            for (int i = size - lowCount; i < size; i++) low += NANOS / (double) sortedIntervals[i];
+            low /= lowCount;
+
+            MinecraftForge.EVENT_BUS.post(new FpsUpdateEvent(inst, min, avg, low));
+        });
+    }
+
+    public static void tick(TickEvent.@NotNull RenderTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+
+        long now = System.nanoTime();
+
+        if (last != 0L) {
+            long delta = now - last;
+            if (delta > 0L) {
+                intervals.addLast(new FrameInterval(now, delta));
+                total += delta;
+            }
+        }
+
+        last = now;
+        pruneWindow(now, RenderArgs.FPS_WINDOW.get());
+    }
+
+    private static void pruneWindow(long now, int windowMillis) {
+        long cutoff = now - windowMillis * NANOS_PER_MILLISECOND;
+        while (!intervals.isEmpty() && intervals.peekFirst().timestamp < cutoff) {
+            total -= intervals.removeFirst().interval;
+        }
+    }
+
+    private record FrameInterval(long timestamp, long interval) {}
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\event\GCTracker.java =====
+package me.kall.narutooverlay.event;
+
+import com.sun.management.GarbageCollectionNotificationInfo;
+import com.sun.management.GcInfo;
+import javax.management.NotificationEmitter;
+import javax.management.openmbean.CompositeData;
+
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.time.Instant;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+public class GCTracker {
+    private static final AtomicReference<Instant> TIME = new AtomicReference<>();
+    private static final AtomicLong DURATION = new AtomicLong();
+    private static final AtomicReference<String> NAME = new AtomicReference<>();
+
+    public static void setup() {
+        for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
+            if (bean instanceof NotificationEmitter emitter) {
+                emitter.addNotificationListener((notification, handback) -> {
+                    if (notification.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
+                        GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) notification.getUserData());
+                        GcInfo gcInfo = info.getGcInfo();
+
+                        TIME.set(Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime() + gcInfo.getStartTime()));
+                        DURATION.set(gcInfo.getDuration());
+                        NAME.set(info.getGcName());
+                    }
+                }, null, null);
+            }
+        }
+    }
+
+    public static Instant time() {
+        return TIME.get();
+    }
+
+    public static long duration() {
+        return DURATION.get();
+    }
+
+    public static String name() {
+        return NAME.get();
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\event\RAMTracker.java =====
+package me.kall.narutooverlay.event;
+
+import it.unimi.dsi.fastutil.longs.Long2LongFunction;
+import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.event.api.*;
+import me.kall.narutooverlay.event.api.RAMUpdateEvent;
+import me.kall.narutooverlay.event.api.TaskRegistryEvent;
+import net.minecraftforge.common.MinecraftForge;
+import org.jetbrains.annotations.NotNull;
+
+public final class RAMTracker {
+    private static final Long2LongFunction MB = bytes -> bytes / (1024L * 1024L);
+
+    public static void listen(@NotNull TaskRegistryEvent event) {
+        event.register(RenderArgs.RAM_COOLDOWN::get, RenderArgs.RAM::active, () -> {
+            Runtime runtime = Runtime.getRuntime();
+            long max = runtime.maxMemory();
+            long total = runtime.totalMemory();
+            long used = total - runtime.freeMemory();
+
+            MinecraftForge.EVENT_BUS.post(new RAMUpdateEvent(MB.applyAsLong(max), MB.applyAsLong(total), MB.applyAsLong(used)));
+        });
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\event\TextRelocation.java =====
+package me.kall.narutooverlay.event;
+
+import com.mojang.blaze3d.platform.Window;
+import me.kall.narutooverlay.card.Card;
+import me.kall.narutooverlay.card.CardRegistry;
+import me.kall.narutooverlay.config.ConfigSaver;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.Minecraft;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.event.TickEvent;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
+
+public class TextRelocation {
+    private static @Nullable Card<?> dragging;
+
+    private static double deltaX;
+    private static double deltaY;
+
+    public static void click(InputEvent.MouseButton.@NotNull Pre event) {
+        if (!isLeftMouse(event, GLFW.GLFW_PRESS)) return;
+        if (!(Minecraft.getInstance().screen instanceof ChatScreen)) return;
+
+        double mouseX = mouseX();
+        double mouseY = mouseY();
+
+        Card<?> card = pick(mouseX, mouseY);
+
+        if (card == null) {
+            if (!Screen.hasShiftDown() && !Screen.hasControlDown()) CardRegistry.select(null);
+            return;
+        }
+
+        if (Screen.hasControlDown()) {
+            if (CardRegistry.split(card)) ConfigSaver.changed();
+            CardRegistry.select(null);
+            dragging = null;
+            event.setCanceled(true);
+            return;
+        }
+
+        if (Screen.hasShiftDown()) {
+            CardRegistry.select(CardRegistry.isSelected(card) ? null : card);
+            dragging = null;
+            event.setCanceled(true);
+            return;
+        }
+
+        Card<?> mergeSource = CardRegistry.selected();
+        if (mergeSource != null) {
+            CardRegistry.select(null);
+            dragging = null;
+
+            if (mergeSource != card && CardRegistry.merge(mergeSource, card)) {
+                ConfigSaver.changed();
+            }
+
+            event.setCanceled(true);
+            return;
+        }
+
+        dragging = card;
+        deltaX = mouseX - card.left();
+        deltaY = mouseY - card.top();
+    }
+
+    public static @Nullable Card<?> pick(double mouseX, double mouseY) {
+        return CardRegistry.pick(mouseX, mouseY);
+    }
+
+    public static double mouseX() {
+        Minecraft minecraft = Minecraft.getInstance();
+        Window window = minecraft.getWindow();
+        return minecraft.mouseHandler.xpos() * window.getGuiScaledWidth() / window.getScreenWidth();
+    }
+
+    public static double mouseY() {
+        Minecraft minecraft = Minecraft.getInstance();
+        Window window = minecraft.getWindow();
+        return minecraft.mouseHandler.ypos() * window.getGuiScaledHeight() / window.getScreenHeight();
+    }
+
+    public static void drag(TickEvent.@NotNull ClientTickEvent event) {
+        if (!event.phase.equals(TickEvent.Phase.START) || dragging == null) return;
+
+        Card<?> moving = dragging;
+        int oldLeft = moving.left();
+        int oldTop = moving.top();
+
+        moving.moveTo(mouseX() - deltaX, mouseY() - deltaY);
+
+        int dx = moving.left() - oldLeft;
+        int dy = moving.top() - oldTop;
+        if (dx == 0 && dy == 0) return;
+
+        for (Card<?> member : CardRegistry.groupMembers(moving)) {
+            if (member != moving) member.moveTo(member.left() + dx, member.top() + dy);
+        }
+    }
+
+    public static void release(InputEvent.MouseButton.@NotNull Pre event) {
+        if (isLeftMouse(event, GLFW.GLFW_RELEASE)) {
+            if (dragging != null) {
+                ConfigSaver.changed();
+                dragging = null;
+            }
+        }
+    }
+
+    private static boolean isLeftMouse(InputEvent.MouseButton.@NotNull Pre event, int action) {
+        return event.getButton() == GLFW.GLFW_MOUSE_BUTTON_LEFT && event.getAction() == action;
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\NarutoOverlay.java =====
+package me.kall.narutooverlay;
+
+import me.kall.narutooverlay.card.CardRegistry;
+import me.kall.narutooverlay.config.ConfigVersion;
+import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.config.ui.NarutoUiGate;
+import me.kall.narutooverlay.event.FpsTracker;
+import me.kall.narutooverlay.event.GCTracker;
+import me.kall.narutooverlay.event.RAMTracker;
+import me.kall.narutooverlay.event.TextRelocation;
+import me.kall.narutooverlay.event.api.TaskRegistryEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.ModLoader;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLLoader;
+import org.jetbrains.annotations.NotNull;
+
+@Mod(NarutoOverlay.MOD_ID)
+public final class NarutoOverlay {
+    public static final String MOD_ID = "narutooverlay";
+
+    public static final String ENV;
+
+    static {
+        boolean isNeoEnv;
+
+        try {
+            Class.forName("net.minecraftforge.fml.ModLoader");
+            isNeoEnv = false;
+        } catch (ClassNotFoundException exception) {
+            isNeoEnv = true;
+        }
+
+        ENV = isNeoEnv ? "NeoForge" : "Forge";
+    }
+
+    public NarutoOverlay(@NotNull FMLJavaModLoadingContext context) {
+        if (FMLLoader.getDist().isClient()) {
+            context.registerConfig(ModConfig.Type.CLIENT, RenderArgs.CONFIG);
+
+            IEventBus modBus = context.getModEventBus();
+
+            modBus.addListener(ConfigVersion::onLoading);
+            modBus.addListener(ConfigVersion::onReloading);
+
+            modBus.addListener(FpsTracker::listen);
+            modBus.addListener(RAMTracker::listen);
+            modBus.addListener(RenderArgs.GC::listen);
+
+            if (ModList.get().isLoaded("modernui")) {
+                NarutoUiGate.integrate(context);
+            }
+        }
+    }
+
+    @Mod.EventBusSubscriber(modid = MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
+    public static class ModEventListeners {
+        @SubscribeEvent(priority = EventPriority.LOWEST)
+        public static void setup(@NotNull FMLClientSetupEvent event) {
+            event.enqueueWork(() -> {
+                IEventBus bus = MinecraftForge.EVENT_BUS;
+
+                bus.addListener(CardRegistry::render);
+
+                bus.addListener(RenderArgs.FPS::update);
+                bus.addListener(EventPriority.LOWEST, FpsTracker::tick);
+
+                GCTracker.setup();
+
+                bus.addListener(RenderArgs.RAM::update);
+
+                bus.addListener(RenderArgs::tick);
+
+                bus.addListener(TextRelocation::click);
+                bus.addListener(TextRelocation::drag);
+                bus.addListener(TextRelocation::release);
+
+                bus.addListener(TaskRegistryEvent::update);
+
+                ModLoader.get().postEvent(TaskRegistryEvent.INSTANCE);
+            });
+        }
+
+        @SubscribeEvent
+        public static void registerKey(@NotNull RegisterKeyMappingsEvent event) {
+            event.register(RenderArgs.RESET_KEY.get());
+        }
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\text\HudShimmerClock.java =====
+package me.kall.narutooverlay.text;
+
+import me.kall.narutooverlay.config.RenderArgs;
+
+/**
+ * HUD-local shimmer clock. It deliberately does not depend on the NarutoUI API, so the HUD keeps
+ * working when the optional configuration-screen library is absent.
+ */
+final class HudShimmerClock {
+    private static final double MAX_STEP_SECONDS = 0.1D;
+    private static final double SMOOTHING = 10.0D;
+    private static final long SCALE_DEBOUNCE_MS = 140L;
+    private static final long SCALE_TRANSITION_MS = 900L;
+    private static final double SCALE_EPSILON = 0.001D;
+
+    private boolean initialized;
+    private long lastMillis;
+    private double time;
+    private double speed = 1.0D;
+    private double strength = 1.0D;
+    private double scaleFrom = 1.0D;
+    private double scaleTo = 1.0D;
+    private double scaleMix = 1.0D;
+    private double pendingScale = 1.0D;
+    private long pendingSince;
+    private long scaleTransitionStart;
+    private boolean scaleTransition;
+
+    synchronized void update() {
+        long now = System.currentTimeMillis();
+
+        double targetSpeed = RenderArgs.SHIMMER_SPEED.get();
+        double targetScale = RenderArgs.SHIMMER_SCALE.get();
+        double targetStrength = RenderArgs.SHIMMER_STRENGTH.get();
+
+        if (!this.initialized) {
+            this.initialized = true;
+            this.lastMillis = now;
+            this.pendingSince = now;
+            this.speed = targetSpeed;
+            this.strength = targetStrength;
+            this.scaleFrom = targetScale;
+            this.scaleTo = targetScale;
+            this.pendingScale = targetScale;
+            this.scaleMix = 1.0D;
+            return;
+        }
+
+        double dt = Math.max(0.0D, Math.min(MAX_STEP_SECONDS, (now - this.lastMillis) / 1000.0D));
+        this.lastMillis = now;
+
+        if (dt > 0.0D) {
+            double blend = 1.0D - Math.exp(-dt * SMOOTHING);
+            this.speed += (targetSpeed - this.speed) * blend;
+            this.strength += (targetStrength - this.strength) * blend;
+            this.time += dt * this.speed;
+        }
+
+        if (Math.abs(targetScale - this.pendingScale) > SCALE_EPSILON) {
+            this.pendingScale = targetScale;
+            this.pendingSince = now;
+        }
+
+        if (this.scaleTransition) {
+            double progress = (now - this.scaleTransitionStart) / (double) SCALE_TRANSITION_MS;
+            if (progress >= 1.0D) {
+                this.scaleFrom = this.scaleTo;
+                this.scaleMix = 1.0D;
+                this.scaleTransition = false;
+            } else {
+                double p = Math.max(0.0D, progress);
+                this.scaleMix = p * p * (3.0D - 2.0D * p);
+            }
+        }
+
+        if (!this.scaleTransition && now - this.pendingSince >= SCALE_DEBOUNCE_MS
+                && Math.abs(this.pendingScale - this.scaleTo) > SCALE_EPSILON) {
+            this.scaleFrom = this.scaleTo;
+            this.scaleTo = this.pendingScale;
+            this.scaleMix = 0.0D;
+            this.scaleTransitionStart = now;
+            this.scaleTransition = true;
+        }
+    }
+
+    synchronized double time() {
+        return this.time;
+    }
+
+    synchronized double scaleFrom() {
+        return this.scaleFrom;
+    }
+
+    synchronized double scaleTo() {
+        return this.scaleTo;
+    }
+
+    synchronized double scaleMix() {
+        return this.scaleMix;
+    }
+
+    synchronized double strength() {
+        return this.strength;
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\text\TextLine.java =====
+package me.kall.narutooverlay.text;
+
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import me.kall.narutooverlay.config.RenderArgs;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.FormattedCharSink;
+import net.minecraft.Util;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+
+public final class TextLine {
+    public static final int DIVIDER_GAP = 7;
+    private static final HudShimmerClock SHIMMER_CLOCK = new HudShimmerClock();
+
+    public enum Align {
+        LEFT,
+        RIGHT
+    }
+
+    private record Run(Component text, FormattedCharSequence sequence, int x) {}
+
+    private final Run[] runs;
+    private final int[] dividers;
+    private final int width;
+
+    private final CachedSequence[] shimmerCache;
+    private long shimmerCacheAt;
+    private int shimmerCacheLeft = Integer.MIN_VALUE;
+    private boolean shimmerCacheValid;
+
+    @Contract(pure = true)
+    private TextLine(Run @NotNull [] runs, int[] dividers, int width) {
+        this.runs = runs;
+        this.dividers = dividers;
+        this.width = width;
+        this.shimmerCache = new CachedSequence[runs.length];
+    }
+
+    public int width() {
+        return this.width;
+    }
+
+    public int[] dividers() {
+        return this.dividers;
+    }
+
+    public void draw(@NotNull GuiGraphics graphics, @NotNull Font font, int left, int top, boolean shadow) {
+        if (RenderArgs.SHIMMER.get() && RenderArgs.palette().hasAccent()) {
+            if (RenderArgs.CACHE_SHIMMER.get()) {
+                this.drawShimmerCached(graphics, font, left, top, shadow);
+            } else {
+                this.drawShimmerLegacy(graphics, font, left, top, shadow);
+            }
+            return;
+        }
+
+        float y = top + textOffset();
+        for (Run run : this.runs) {
+            drawRun(graphics, font, run.sequence(), left + run.x(), y, shadow);
+        }
+    }
+
+    private void drawShimmerCached(@NotNull GuiGraphics graphics, @NotNull Font font, int left, int top, boolean shadow) {
+        long now = Util.getMillis();
+        int fps = Math.max(1, RenderArgs.SHIMMER_FPS.get());
+        long interval = Math.max(1L, 1000L / fps);
+
+        if (!this.shimmerCacheValid || left != this.shimmerCacheLeft || now - this.shimmerCacheAt >= interval) {
+            this.rebuildShimmerCache(left, now);
+        }
+
+        float y = top + textOffset();
+        for (int i = 0; i < this.runs.length; i++) {
+            CachedSequence sequence = this.shimmerCache[i];
+            if (sequence == null) continue;
+
+            drawRun(graphics, font, sequence, left + this.runs[i].x(), y, shadow);
+        }
+    }
+
+    private void rebuildShimmerCache(int left, long now) {
+        ShimmerState state = shimmerState();
+
+        for (int i = 0; i < this.runs.length; i++) {
+            this.shimmerCache[i] = buildShimmerCache(this.runs[i], left, state);
+        }
+
+        this.shimmerCacheAt = now;
+        this.shimmerCacheLeft = left;
+        this.shimmerCacheValid = true;
+    }
+
+    @Contract("_, _, _ -> new")
+    private static @NotNull CachedSequence buildShimmerCache(@NotNull Run run, int left, @NotNull ShimmerState state) {
+        float baseX = left + run.x();
+        IntArrayList indices = new IntArrayList();
+        IntArrayList codepoints = new IntArrayList();
+        ObjectArrayList<Style> styles = new ObjectArrayList<>();
+
+        run.sequence().accept((index, style, codePoint) -> {
+            indices.add(index);
+            codepoints.add(codePoint);
+            styles.add(style.withColor(TextColor.fromRgb(shimmerColor(style, baseX, index, state))));
+            return true;
+        });
+
+        return new CachedSequence(indices.toIntArray(), codepoints.toIntArray(), styles.toArray(new Style[0]));
+    }
+
+    private void drawShimmerLegacy(@NotNull GuiGraphics graphics, @NotNull Font font, int left, int top, boolean shadow) {
+        ShimmerState state = shimmerState();
+        float y = top + textOffset();
+
+        for (Run run : this.runs) {
+            float baseX = left + run.x();
+
+            FormattedCharSequence shimmered = sink -> run.sequence().accept((index, style, codePoint) -> {
+                int color = shimmerColor(style, baseX, index, state);
+                return sink.accept(index, style.withColor(TextColor.fromRgb(color)), codePoint);
+            });
+
+            drawRun(graphics, font, shimmered, baseX, y, shadow);
+        }
+    }
+
+    private static @NotNull ShimmerState shimmerState() {
+        SHIMMER_CLOCK.update();
+        float time = (float) SHIMMER_CLOCK.time();
+        float scaleA = (float) SHIMMER_CLOCK.scaleFrom();
+        float scaleB = (float) SHIMMER_CLOCK.scaleTo();
+        float scaleMix = (float) SHIMMER_CLOCK.scaleMix();
+        float strength = (float) SHIMMER_CLOCK.strength();
+        int accent = RenderArgs.palette().accent() | 0xFF000000;
+        int highlight = lerp(accent, 0xFFFFFF, 0.25F);
+        return new ShimmerState(time, scaleA, scaleB, scaleMix, strength, highlight);
+    }
+
+    private static int shimmerColor(@NotNull Style style, float baseX, int index, @NotNull ShimmerState state) {
+        int base = style.getColor() == null ? 0xFFFFFF : style.getColor().getValue();
+        float phaseA = (baseX + index * 5.6F * state.scaleA()) * 0.075F - state.time() * 1.9F;
+        float phaseB = (baseX + index * 5.6F * state.scaleB()) * 0.075F - state.time() * 1.9F;
+        float waveA = 0.5F + 0.5F * (float) Math.sin(phaseA);
+        float waveB = 0.5F + 0.5F * (float) Math.sin(phaseB);
+        float wave = waveA + (waveB - waveA) * state.scaleMix();
+        return lerp(base, state.highlight(), wave * wave * state.strength());
+    }
+
+    private static void drawRun(@NotNull GuiGraphics graphics, @NotNull Font font, @NotNull FormattedCharSequence sequence, float x, float y, boolean shadow) {
+        font.drawInBatch(sequence, x, y, 0xFFFFFF, shadow, graphics.pose().last().pose(), graphics.bufferSource(), Font.DisplayMode.NORMAL, 0, 15728880);
+    }
+
+    private record ShimmerState(float time, float scaleA, float scaleB, float scaleMix, float strength, int highlight) {}
+
+    private record CachedSequence(int[] indices, int[] codepoints, Style[] styles) implements FormattedCharSequence {
+        @Override
+            public boolean accept(@NotNull FormattedCharSink sink) {
+                for (int i = 0; i < this.codepoints.length; i++) {
+                    if (!sink.accept(this.indices[i], this.styles[i], this.codepoints[i])) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
+    private static float textOffset() {
+        return (float) (double) RenderArgs.TEXT_OFFSET_Y.get();
+    }
+
+    private static int lerp(int from, int to, float fraction) {
+        float f = Math.max(0.0F, Math.min(1.0F, fraction));
+        int r = (int) ((from >> 16 & 0xFF) + ((to >> 16 & 0xFF) - (from >> 16 & 0xFF)) * f);
+        int g = (int) ((from >> 8 & 0xFF) + ((to >> 8 & 0xFF) - (from >> 8 & 0xFF)) * f);
+        int b = (int) ((from & 0xFF) + ((to & 0xFF) - (from & 0xFF)) * f);
+        return r << 16 | g << 8 | b;
+    }
+
+    public static @NotNull Builder builder(@NotNull Font font) {
+        return new Builder(font);
+    }
+
+    public static final class Builder {
+        private final Font font;
+        private final List<Run> runs = new ObjectArrayList<>();
+        private final IntArrayList dividers = new IntArrayList();
+
+        private @Nullable MutableComponent pending;
+        private int pendingX;
+        private int cursor;
+
+        private Builder(Font font) {
+            this.font = font;
+        }
+
+        public @NotNull Builder text(@NotNull Component text) {
+            if (this.pending == null) {
+                this.pending = Component.empty();
+                this.pendingX = this.cursor;
+            }
+
+            this.pending.append(text);
+            this.cursor += this.font.width(text);
+            return this;
+        }
+
+        public @NotNull Builder slot(@NotNull Component text, @NotNull String sample, @NotNull Align align) {
+            this.flush();
+
+            int textWidth = this.font.width(text);
+            int slotWidth = Math.max(textWidth, this.font.width(sample));
+            int x = align == Align.RIGHT ? this.cursor + slotWidth - textWidth : this.cursor;
+
+            this.runs.add(new Run(text, text.getVisualOrderText(), x));
+            this.cursor += slotWidth;
+            return this;
+        }
+
+        public void divider() {
+            this.flush();
+
+            this.dividers.add(this.cursor + DIVIDER_GAP / 2);
+            this.cursor += DIVIDER_GAP;
+        }
+
+        public @NotNull TextLine build() {
+            this.flush();
+            return new TextLine(this.runs.toArray(new Run[0]), this.dividers.toIntArray(), this.cursor);
+        }
+
+        private void flush() {
+            if (this.pending == null) return;
+
+            this.runs.add(new Run(this.pending, this.pending.getVisualOrderText(), this.pendingX));
+            this.pending = null;
+        }
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\theme\Palette.java =====
+package me.kall.narutooverlay.theme;
+
+import org.jetbrains.annotations.NotNull;
+
+public record Palette(
+        int label,
+        int unit,
+        int separator,
+        int normal,
+        int warn,
+        int critical,
+        int backplane,
+        int border,
+        int accent
+) {
+    public int value(@NotNull ValueLevel level) {
+        return switch (level) {
+            case NORMAL -> this.normal;
+            case WARN -> this.warn;
+            case CRITICAL -> this.critical;
+        };
+    }
+
+    public boolean hasAccent() {
+        return (this.accent >>> 24) != 0;
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\theme\Theme.java =====
+package me.kall.narutooverlay.theme;
+
+import org.jetbrains.annotations.NotNull;
+
+public enum Theme {
+    NARUTO(new Palette(
+            0xFF8F2A,
+            0xE0A64A,
+            0xA03A26,
+            0xFFFFFF,
+            0xFFD64A,
+            0xFF4A38,
+            0xB01E0A08,
+            0xCCE33A26,
+            0xFFFFC42E
+    )),
+
+    CLASSIC(new Palette(
+            0xFFFFFF,
+            0xFFFFFF,
+            0xFFFFFF,
+            0xFFFFFF,
+            0xFFFF55,
+            0xFF5555,
+            0xA0404040,
+            0xFFFFFFFF,
+            0x00000000
+    ));
+
+    private final Palette palette;
+
+    Theme(Palette palette) {
+        this.palette = palette;
+    }
+
+    public @NotNull Palette palette() {
+        return this.palette;
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\theme\ValueLevel.java =====
+package me.kall.narutooverlay.theme;
+
+public enum ValueLevel {
+    NORMAL,
+    WARN,
+    CRITICAL
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\util\Formats.java =====
+package me.kall.narutooverlay.util;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Locale;
+
+public final class Formats {
+    public record Quantity(@NotNull String number, @NotNull String unit) {}
+
+    public static @NotNull String memory(long megabytes) {
+        return Long.toString(megabytes);
+    }
+
+    public static @NotNull String memoryUnit() {
+        return " MB";
+    }
+
+    public static @NotNull Quantity elapsed(double seconds) {
+        if (seconds < 0.0D) seconds = 0.0D;
+        if (seconds < 1.0D) return new Quantity(Long.toString((long) (seconds * 1000.0D)), " ms");
+        if (seconds < 60.0D) return new Quantity(String.format(Locale.ROOT, "%.1f", seconds), " s");
+
+        long whole = (long) seconds;
+
+        if (whole < 3600L) return new Quantity(String.format(Locale.ROOT, "%d:%02d", whole / 60L, whole % 60L), " min");
+        return new Quantity(String.format(Locale.ROOT, "%d:%02d", whole / 3600L, whole % 3600L / 60L), " h");
+    }
+}
+
+// =====D:\ModDev\NarutoOverlay\src\main\java\me\kall\narutooverlay\util\Texts.java =====
+package me.kall.narutooverlay.util;
+
+import me.kall.narutooverlay.config.RenderArgs;
+import me.kall.narutooverlay.theme.ValueLevel;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import org.jetbrains.annotations.NotNull;
+
+public final class Texts {
+    private Texts() {}
+
+    public static @NotNull MutableComponent label(@NotNull String text) {
+        return colored(text, RenderArgs.palette().label());
+    }
+
+    public static @NotNull MutableComponent unit(@NotNull String text) {
+        return colored(text, RenderArgs.palette().unit());
+    }
+
+    public static @NotNull MutableComponent separator(@NotNull String text) {
+        return colored(text, RenderArgs.palette().separator());
+    }
+
+    public static @NotNull MutableComponent value(@NotNull String text) {
+        return value(text, ValueLevel.NORMAL);
+    }
+
+    public static @NotNull MutableComponent value(@NotNull String text, @NotNull ValueLevel level) {
+        return colored(text, RenderArgs.palette().value(level));
+    }
+
+    private static @NotNull MutableComponent colored(@NotNull String text, int rgb) {
+        return Component.literal(text).withStyle(Style.EMPTY.withColor(rgb & 0xFFFFFF));
+    }
+}
+

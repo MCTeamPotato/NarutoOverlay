@@ -40,6 +40,10 @@
   "narutooverlay.config.appearance.title": "外观",
   "narutooverlay.config.appearance.subtitle": "主题、显示、流光与性能。",
   "narutooverlay.config.appearance.theme": "主题",
+  "narutooverlay.config.appearance.custom": "自定义主题颜色",
+  "narutooverlay.config.appearance.custom.note": "仅在“自定义”主题下生效。标签、单位和分隔线颜色会从背板颜色推导，以保证可读性。",
+  "narutooverlay.config.appearance.customAccent": "强调色",
+  "narutooverlay.config.appearance.customBackplane": "背板颜色",
   "narutooverlay.config.appearance.display": "显示",
   "narutooverlay.config.appearance.dropShadow": "文字阴影",
   "narutooverlay.config.appearance.dropShadow.desc": "在 Overlay 文字后方绘制阴影。",
@@ -134,5 +138,13 @@
   "narutooverlay.config.color.brightness": "亮度",
   "narutooverlay.config.color.alpha": "透明度",
   "narutooverlay.config.color.apply": "应用",
-  "narutooverlay.config.color.cancel": "取消"
+  "narutooverlay.config.color.cancel": "取消",
+
+  "narutooverlay.theme.naruto": "鸣人",
+  "narutooverlay.theme.classic": "经典",
+  "narutooverlay.theme.jade": "翡翠",
+  "narutooverlay.theme.azure": "天青",
+  "narutooverlay.theme.sakura": "樱花",
+  "narutooverlay.theme.graphite": "石墨",
+  "narutooverlay.theme.custom": "自定义"
 }
