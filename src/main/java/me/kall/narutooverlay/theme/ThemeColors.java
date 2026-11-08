@@ -3,6 +3,8 @@ package me.kall.narutooverlay.theme;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.regex.Pattern;
 
 /**
@@ -129,17 +131,7 @@ public final class ThemeColors {
         boolean custom = schemeId == null || "CUSTOM".equalsIgnoreCase(schemeId);
 
         if (!custom && "NARUTO".equalsIgnoreCase(schemeId)) {
-            return new int[]{
-                    0xFFFFFFFF,
-                    opaque(palette.warn()),
-                    accent,
-                    opaque(palette.label()),
-                    opaque(palette.critical()),
-                    opaque(palette.label()),
-                    accent,
-                    opaque(palette.warn()),
-                    0xFFFFFFFF
-            };
+            return semanticHeat(palette);
         }
 
         int light2 = mix(accent, 0xFFFFFFFF, 0.75D);
@@ -160,6 +152,29 @@ public final class ThemeColors {
                 light1,
                 light2
         };
+    }
+
+    /**
+     * Walks the status colors from bright to deep and mirrors the result.
+     * <p>
+     * This is the same rule NarutoUI's generator uses, so the overlay produces the signature
+     * white/gold/orange/red wave whether or not NarutoUI is installed. The order is the status
+     * ladder the HUD already uses, not a gradient.
+     *
+     * @param palette active palette
+     * @return nine ARGB stops
+     */
+    private static int @NotNull [] semanticHeat(@NotNull Palette palette) {
+        Integer[] heat = {
+                opaque(palette.warn()),
+                opaque(palette.accent()),
+                opaque(palette.label()),
+                opaque(palette.critical())
+        };
+        Arrays.sort(heat, Comparator.comparingDouble((Integer color) -> -luminance(color)));
+        return new int[]{
+                0xFFFFFFFF, heat[0], heat[1], heat[2], heat[3],
+                heat[2], heat[1], heat[0], 0xFFFFFFFF};
     }
 
     /**

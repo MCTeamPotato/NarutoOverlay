@@ -37,3 +37,7 @@
 - Derive the appearance theme list from NarutoUI's shared `MuiColorSchemes` catalog when NarutoUI is installed; newly registered schemes appear automatically.
 - Keep the HUD optional-dependency-safe: without NarutoUI, the local Naruto/Classic/Jade/Azure/Sakura/Graphite schemes still work through a reflective adapter.
 - Store the theme as a stable string id, so old `theme = "NARUTO"` configs keep working and new NarutoUI scheme ids are accepted.
+# 1.6.1
+- Fix the built-in Naruto palette: five of its colors were missing the alpha byte, which made the overlay label and value colors fully transparent when NarutoUI is not installed.
+- Build the Naruto shimmer ramp from the HUD status colors ordered bright to deep, the same rule NarutoUI 1.9.0 uses, so the wave matches with or without NarutoUI.
+- Update the NarutoUI artifact to 1.9.0.
