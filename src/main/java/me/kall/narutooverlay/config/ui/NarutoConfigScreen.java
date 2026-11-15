@@ -1,10 +1,7 @@
 package me.kall.narutooverlay.config.ui;
 
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.Image;
 import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.*;
 import me.kall.narutooverlay.NarutoOverlay;
 import me.kall.narutooverlay.card.Card;
@@ -20,22 +17,16 @@ import me.kall.narutooverlay.theme.HudSchemes;
 import me.kall.narutooverlay.theme.Palette;
 import me.kall.narutooverlay.theme.ThemeColors;
 import me.kall.narutoui.mui.background.*;
-import me.kall.narutoui.mui.choice.MuiChoiceGrid;
-import me.kall.narutoui.mui.choice.MuiDropdown;
 import me.kall.narutoui.mui.choice.MuiOption;
 import me.kall.narutoui.mui.factory.MuiWidgetFactory;
-import me.kall.narutoui.mui.field.MuiListEditor;
 import me.kall.narutoui.mui.field.MuiNumberField;
-import me.kall.narutoui.mui.field.MuiTextField;
 import me.kall.narutoui.mui.layout.MuiLayout;
 import me.kall.narutoui.mui.overlay.MuiColorPickerOverlay;
 import me.kall.narutoui.mui.overlay.MuiCropOverlay;
-import me.kall.narutoui.mui.overlay.MuiCropOverlayFactory;
 import me.kall.narutoui.mui.screen.*;
 import me.kall.narutoui.mui.shimmer.MuiShimmer;
 import me.kall.narutoui.mui.shimmer.MuiShimmerConfig;
 import me.kall.narutoui.mui.shimmer.MuiShimmerProfile;
-import me.kall.narutoui.mui.shimmer.MuiShimmerable;
 import me.kall.narutoui.mui.theme.MuiTheme;
 import me.kall.narutoui.mui.widget.*;
 import net.minecraft.SharedConstants;
@@ -58,37 +49,28 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.IntConsumer;
-import java.util.function.Supplier;
 
 import static me.kall.narutooverlay.config.RenderArgs.*;
 import static me.kall.narutoui.mui.layout.MuiControls.*;
 
+/**
+ * NarutoOverlay's configuration screen.
+ * <p>
+ * One instance owns one screen: the background controller, the shimmer profile and the page
+ * bodies are all per-instance, so opening the config from the chat screen and from the mod list no
+ * longer share mutable UI state. The static {@link #register(FMLJavaModLoadingContext)} entry point
+ * only installs the Forge hooks.
+ */
 public final class NarutoConfigScreen {
-    private static final MuiConfigurableBackground BACKGROUND = MuiConfigurableBackground
-            .builder(
-                    new NarutoBackgroundSettings(),
-                    new MuiBackgroundLabels(
-                            "narutooverlay.config.background.picker",
-                            "narutooverlay.config.background.filter",
-                            "narutooverlay.config.background.pickerFailed",
-                            "narutooverlay.config.background.folder.picker",
-                            "narutooverlay.config.background.folder.failed",
-                            "narutooverlay.config.background.failed",
-                            "narutooverlay.config.background.saved",
-                            new MuiCropOverlay.Labels(
-                                    "narutooverlay.config.background.crop.title",
-                                    "narutooverlay.config.background.crop.hint",
-                                    "narutooverlay.config.background.confirm",
-                                    "narutooverlay.config.background.cancel"
-                            )
-                    ),
-                    new MuiBackgroundFiles(FMLPaths.GAMEDIR.get(), "narutooverlay-config-bg")
-            )
-            .cropFactory(new NarutoCropFactory())
-            .build();
+    private final MuiConfigurableBackground background;
+    private final MuiShimmerProfile shimmerProfile;
 
-    private static final NarutoScreenHost HOST = new NarutoScreenHost();
+    private NarutoConfigScreen() {
+        this.background = MuiConfigurableBackground
+                .builder(new NarutoBackgroundSettings(), backgroundLabels(), new MuiBackgroundFiles(FMLPaths.GAMEDIR.get(), "narutooverlay-config-bg"))
+                .build();
+        this.shimmerProfile = MuiShimmerProfile.create(new NarutoShimmerConfig());
+    }
 
     public static void register(@NotNull FMLJavaModLoadingContext context) {
         NarutoJarResources.install();
@@ -97,238 +79,208 @@ public final class NarutoConfigScreen {
     }
 
     private static @NotNull Screen build(@Nullable Screen previous) {
+        return new NarutoConfigScreen().create(previous);
+    }
+
+    private @NotNull Screen create(@Nullable Screen previous) {
         return MuiSettingsScreen.builder("NarutoOverlay")
-                .widgetFactory(NarutoShimmerFactory.INSTANCE)
-                .shimmerProfile(NarutoShimmerConfig.PROFILE)
-                .background(BACKGROUND)
+                .widgetFactory(MuiWidgetFactory.shimmer())
+                .shimmerProfile(this.shimmerProfile)
+                .background(this.background)
                 .initialPage(0)
                 .shimmerNavigation()
                 .shimmerTitles()
-                .themeProvider(context -> {
-                    MuiTheme base = MuiTheme.modern(context);
-                    return base.withPrimary(NarutoAccent.primary()).withOnPrimary(NarutoAccent.onPrimary());
-                })
-                .railHeader(context -> MuiLogo.create(context, MuiTheme.modern(context), "N").color(NarutoAccent.primary()).textColor(NarutoAccent.onPrimary()))
-                .railFooter(context -> MuiHintBadge.create(context, MuiTheme.modern(context), "narutooverlay.config.footer.escHint").color(NarutoAccent.primary()))
-                .onCreated(HOST::attach)
-                .onDestroyed(fragment -> HOST.attach(null))
-                .page("narutooverlay.config.nav.cards", "narutooverlay.config.cards.title", "narutooverlay.config.cards.subtitle", NarutoConfigScreen::buildCards)
-                .page("narutooverlay.config.nav.appearance", "narutooverlay.config.appearance.title", "narutooverlay.config.appearance.subtitle", NarutoConfigScreen::buildAppearance)
-                .page("narutooverlay.config.nav.about", "narutooverlay.config.about.title", "narutooverlay.config.about.subtitle", NarutoConfigScreen::buildAbout)
+                .themeProvider(context -> MuiTheme.modern(context)
+                        .withPrimary(NarutoAccent.primary())
+                        .withOnPrimary(NarutoAccent.onPrimary()))
+                .railHeader((context, theme) -> MuiLogo.create(context, theme, "N")
+                        .color(NarutoAccent.primary())
+                        .textColor(NarutoAccent.onPrimary()))
+                .railFooter((context, theme) -> MuiHintBadge.create(context, theme, "narutooverlay.config.footer.escHint")
+                        .color(NarutoAccent.primary()))
+                .page("narutooverlay.config.nav.cards", "narutooverlay.config.cards.title", "narutooverlay.config.cards.subtitle", this::buildCards)
+                .page("narutooverlay.config.nav.appearance", "narutooverlay.config.appearance.title", "narutooverlay.config.appearance.subtitle", this::buildAppearance)
+                .page("narutooverlay.config.nav.about", "narutooverlay.config.about.title", "narutooverlay.config.about.subtitle", this::buildAbout)
                 .create(previous);
     }
 
-    private static void buildCards(@NotNull MuiSettingsPage page) {
-        page.shimmerAll().custom(ui -> {
-            Context context = ui.context();
-            MuiTheme theme = ui.theme();
-            MuiLayout content = ui.contentLayout();
-            boolean firstCard = true;
+    /**
+     * Builds one collapsible section per registered card. Each section is rebuilt on its own after a
+     * reset, so the page keeps its scroll position and the other cards stay expanded.
+     *
+     * @param page the cards page
+     */
+    private void buildCards(@NotNull MuiSettingsPage page) {
+        page.shimmerAll();
 
-            for (Card<?> card : CardRegistry.all()) {
-                String cardID = card.id().toLowerCase(Locale.ROOT);
+        Context context = page.context().context();
+        MuiTheme theme = page.theme();
 
-                MuiCollapsibleCard box = MuiCollapsibleCard.card(context, theme, "narutooverlay.config.card." + cardID, "narutooverlay.config.card." + cardID + ".summary", false);
-                MuiLayout body = box.body();
+        List<Runnable> refreshers = new ArrayList<>();
+        for (Card<?> card : CardRegistry.all()) {
+            String cardID = "narutooverlay.config.card." + card.id().toLowerCase(Locale.ROOT);
+            Switch toggle = this.cardToggle(context, theme, card);
 
-                MuiNumberField x = MuiNumberField.create(context, theme, card.left()).bounds(0, Integer.MAX_VALUE).gravity(Gravity.CENTER).onChangeInt(card::setLeft);
-                MuiNumberField y = MuiNumberField.create(context, theme, card.top()).bounds(0, Integer.MAX_VALUE).gravity(Gravity.CENTER).onChangeInt(card::setTop);
+            MuiSettingsSection section = page.collapsibleCard(
+                    cardID,
+                    cardID,
+                    cardID + ".summary",
+                    false,
+                    box -> box.trailing(toggle),
+                    body -> this.buildCardBody(card, body));
 
-                Switch cardToggle = switchControl(context, theme);
-                cardToggle.setChecked(card.enabledValue().get());
-                cardToggle.setContentDescription("narutooverlay.config.cards.enabled");
-                cardToggle.setOnCheckedChangeListener((buttonView, isChecked) -> card.setEnabled(isChecked));
+            refreshers.add(() -> {
+                toggle.setChecked(card.enabledValue().get());
+                section.rebuild(body -> this.buildCardBody(card, body));
+            });
+        }
 
-                box.trailing(cardToggle);
-
-                Runnable sync = () -> {
-                    x.value(card.left());
-                    y.value(card.top());
-                };
-
-                LinearLayout.LayoutParams yLabelParams = wrap();
-                yLabelParams.setMargins(dp(context, 14), 0, 0, 0);
-
-                LinearLayout.LayoutParams fieldParams = new LinearLayout.LayoutParams(dp(context, 64), WRAP);
-                fieldParams.setMargins(dp(context, 6), 0, 0, 0);
-
-                MuiLayout cardRow = MuiLayout.row(context, theme).padding(0)
-                        .add(text(context, theme, "X", 12, theme.onSurfaceVariant()))
-                        .add(x, fieldParams)
-                        .add(text(context, theme, "Y", 12, theme.onSurfaceVariant()), yLabelParams)
-                        .add(y, fieldParams)
-                        .flexibleSpace()
-                        .add(MuiTextAction.create(context, theme, "narutooverlay.config.cards.resetPosition", () -> card.resetPosition(sync)));
-                body.add(cardRow);
-
-                int screenWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-                int screenHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
-                int right = Math.max(8, screenWidth - card.lineWidth() - 8);
-                int bottom = Math.max(8, screenHeight - Minecraft.getInstance().font.lineHeight - 8);
-
-                MuiLayout presets = MuiLayout.row(context, theme)
-                        .padding(0)
-                        .spacing(6)
-                        .addWeighted(button(context, theme, "narutooverlay.config.cards.topLeft", true, view -> card.moveTo(8, 8, sync)), 1.0F)
-                        .addWeighted(button(context, theme, "narutooverlay.config.cards.topRight", true, view -> card.moveTo(right, 8, sync)), 1.0F)
-                        .addWeighted(button(context, theme, "narutooverlay.config.cards.bottomLeft", true, view -> card.moveTo(8, bottom, sync)), 1.0F)
-                        .addWeighted(button(context, theme, "narutooverlay.config.cards.bottomRight", true, view -> card.moveTo(right, bottom, sync)), 1.0F);
-
-                LinearLayout.LayoutParams presetParams = new LinearLayout.LayoutParams(MATCH, WRAP);
-                presetParams.topMargin = dp(context, 6);
-
-                body.add(presets, presetParams).divider();
-
-                boolean firstField = true;
-                for (Field<?> field : card.allFields()) {
-                    if (!firstField) body.divider();
-                    firstField = false;
-
-                    String fieldID = field.id();
-
-                    FieldConfig config = card.fieldConfig(fieldID);
-                    MuiLayout fieldRow = MuiLayout.row(context, theme).padding(0).add(text(context, theme, "narutooverlay.config.field." + fieldID.toLowerCase(Locale.ROOT), 13, theme.onSurface()), weight());
-
-                    LinearLayout.LayoutParams chipParams = wrap();
-                    chipParams.setMargins(dp(context, 8), 0, 0, 0);
-
-                    if (field.hasLabel()) fieldRow.add(MuiChip.create(context, theme, "narutooverlay.config.chip.label", config.showLabel()).onChanged(config::setShowLabel), chipParams);
-                    if (field.hasUnit()) fieldRow.add(MuiChip.create(context, theme, "narutooverlay.config.chip.unit", config.showUnit()).onChanged(config::setShowUnit), chipParams);
-
-                    Switch fieldToggle = switchControl(context, theme);
-                    fieldToggle.setChecked(config.enabled());
-                    fieldToggle.setOnCheckedChangeListener((buttonView, isChecked) -> config.setEnabled(isChecked));
-
-                    LinearLayout.LayoutParams toggleParams = wrap();
-                    toggleParams.setMargins(dp(context, 10), 0, 0, 0);
-                    fieldRow.add(fieldToggle, toggleParams);
-
-                    body.add(fieldRow);
-                }
-
-                MuiTextAction resetCard = MuiTextAction.create(context, theme, "narutooverlay.config.cards.resetCard", () -> {
-                    card.resetAll();
-                    HOST.reloadCurrentPage();
-                });
-
-                LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(WRAP, WRAP);
-                resetParams.topMargin = dp(context, 10);
-                body.add(resetCard, resetParams);
-
-                LinearLayout.LayoutParams boxParams = new LinearLayout.LayoutParams(MATCH, WRAP);
-                boxParams.setMargins(0, firstCard ? dp(context, 18) : 0, 0, dp(context, 12));
-                firstCard = false;
-
-                content.add(box, boxParams);
-            }
-
+        page.customLayout(content -> {
             MuiTextAction resetAll = MuiTextAction.create(context, theme, "narutooverlay.config.cards.resetAll", () -> {
                 CardRegistry.resetAll();
                 ConfigSaver.changed();
-                HOST.reloadCurrentPage();
+                refreshers.forEach(Runnable::run);
             });
 
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(WRAP, WRAP);
             params.topMargin = dp(context, 20);
-
             content.add(resetAll, params);
         });
     }
 
-    private static void buildAppearance(@NotNull MuiSettingsPage page) {
+    private @NotNull Switch cardToggle(@NotNull Context context, @NotNull MuiTheme theme, @NotNull Card<?> card) {
+        Switch toggle = switchControl(context, theme);
+        toggle.setChecked(card.enabledValue().get());
+        toggle.setContentDescription("narutooverlay.config.cards.enabled");
+        toggle.setOnCheckedChangeListener((buttonView, isChecked) -> card.setEnabled(isChecked));
+        return toggle;
+    }
+
+    private void buildCardBody(@NotNull Card<?> card, @NotNull MuiSettingsSection section) {
+        Context context = section.page().context();
+        MuiTheme theme = section.page().theme();
+
+        MuiNumberField x = MuiNumberField.create(context, theme, card.left()).bounds(0, Integer.MAX_VALUE).gravity(Gravity.CENTER).onChangeInt(card::setLeft);
+        MuiNumberField y = MuiNumberField.create(context, theme, card.top()).bounds(0, Integer.MAX_VALUE).gravity(Gravity.CENTER).onChangeInt(card::setTop);
+
+        Runnable sync = () -> {
+            x.value(card.left());
+            y.value(card.top());
+        };
+
+        LinearLayout.LayoutParams yLabelParams = wrap();
+        yLabelParams.setMargins(dp(context, 14), 0, 0, 0);
+
+        LinearLayout.LayoutParams fieldParams = new LinearLayout.LayoutParams(dp(context, 64), WRAP);
+        fieldParams.setMargins(dp(context, 6), 0, 0, 0);
+
+        section.addRow(MuiLayout.row(context, theme).padding(0)
+                .add(text(context, theme, "X", 12, theme.onSurfaceVariant()))
+                .add(x, fieldParams)
+                .add(text(context, theme, "Y", 12, theme.onSurfaceVariant()), yLabelParams)
+                .add(y, fieldParams)
+                .flexibleSpace()
+                .add(MuiTextAction.create(context, theme, "narutooverlay.config.cards.resetPosition", () -> card.resetPosition(sync))));
+
+        int screenWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        int screenHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+        int right = Math.max(8, screenWidth - card.lineWidth() - 8);
+        int bottom = Math.max(8, screenHeight - Minecraft.getInstance().font.lineHeight - 8);
+
+        section.addRow(MuiLayout.row(context, theme)
+                .padding(0)
+                .spacing(6)
+                .addWeighted(button(context, theme, "narutooverlay.config.cards.topLeft", true, view -> card.moveTo(8, 8, sync)), 1.0F)
+                .addWeighted(button(context, theme, "narutooverlay.config.cards.topRight", true, view -> card.moveTo(right, 8, sync)), 1.0F)
+                .addWeighted(button(context, theme, "narutooverlay.config.cards.bottomLeft", true, view -> card.moveTo(8, bottom, sync)), 1.0F)
+                .addWeighted(button(context, theme, "narutooverlay.config.cards.bottomRight", true, view -> card.moveTo(right, bottom, sync)), 1.0F));
+
+        for (Field<?> field : card.allFields()) {
+            String fieldID = field.id();
+            FieldConfig config = card.fieldConfig(fieldID);
+
+            MuiLayout fieldRow = MuiLayout.row(context, theme)
+                    .padding(0)
+                    .add(text(context, theme, "narutooverlay.config.field." + fieldID.toLowerCase(Locale.ROOT), 13, theme.onSurface()), weight());
+
+            LinearLayout.LayoutParams chipParams = wrap();
+            chipParams.setMargins(dp(context, 8), 0, 0, 0);
+
+            if (field.hasLabel()) fieldRow.add(MuiChip.create(context, theme, "narutooverlay.config.chip.label", config.showLabel()).onChanged(config::setShowLabel), chipParams);
+            if (field.hasUnit()) fieldRow.add(MuiChip.create(context, theme, "narutooverlay.config.chip.unit", config.showUnit()).onChanged(config::setShowUnit), chipParams);
+
+            Switch fieldToggle = switchControl(context, theme);
+            fieldToggle.setChecked(config.enabled());
+            fieldToggle.setOnCheckedChangeListener((buttonView, isChecked) -> config.setEnabled(isChecked));
+
+            LinearLayout.LayoutParams toggleParams = wrap();
+            toggleParams.setMargins(dp(context, 10), 0, 0, 0);
+            fieldRow.add(fieldToggle, toggleParams);
+
+            section.addRow(fieldRow);
+        }
+
+        section.addRow(MuiTextAction.create(context, theme, "narutooverlay.config.cards.resetCard", () ->
+                section.card().post(() -> section.rebuild(body -> this.buildCardBody(card, body)))));
+    }
+
+    private void buildAppearance(@NotNull MuiSettingsPage page) {
+        MuiScreenHost host = page.context().host();
+
         page.shimmerAll()
                 .section("narutooverlay.config.appearance.theme", section -> section
                         .choiceGridBound("narutooverlay.config.appearance.theme", null,
                                 themeChoices(),
                                 NarutoConfigScreen::selectedThemeId, theme -> {
                                     set(THEME, theme);
-                                    HOST.onThemeChanged();
+                                    if (host != null) host.onThemeChanged();
                                 })
                 )
                 .section("narutooverlay.config.appearance.custom", section -> {
                     section.note(localized("narutooverlay.config.appearance.custom.note"));
+
                     section.customLayout(row -> {
-                        Context context = row.getContext();
-                        row.add(MuiColorField.create(context, MuiTheme.modern(context),
-                                        localized("narutooverlay.config.appearance.customAccent")
-                                                + "  " + ThemeColors.format(customAccent()),
-                                        customAccent())
-                                .buttonLabel(localized("narutooverlay.config.appearance.pickColor"))
-                                .onPick(() -> pickCustomColor(true)), fill());
+                        MuiColorField field = colorField(row, "narutooverlay.config.appearance.customAccent", customAccent());
+                        field.onPick(() -> pickCustomColor(host, field, true));
+                        row.add(field, fill());
                     });
-                    section.enabledWhen(() -> HudSchemes.custom(THEME.get()));
+
                     section.customLayout(row -> {
-                        Context context = row.getContext();
-                        row.add(MuiColorField.create(context, MuiTheme.modern(context),
-                                        localized("narutooverlay.config.appearance.customBackplane")
-                                                + "  " + ThemeColors.format(customBackplane()),
-                                        customBackplane())
-                                .buttonLabel(localized("narutooverlay.config.appearance.pickColor"))
-                                .onPick(() -> pickCustomColor(false)), fill());
+                        MuiColorField field = colorField(row, "narutooverlay.config.appearance.customBackplane", customBackplane());
+                        field.onPick(() -> pickCustomColor(host, field, false));
+                        row.add(field, fill());
                     });
-                    section.enabledWhen(() -> HudSchemes.custom(THEME.get()));
+
+                    section.enabledWhenAll(() -> HudSchemes.custom(THEME.get()));
                 })
-                .section("narutooverlay.config.appearance.display", section -> {
-                    section.toggle("narutooverlay.config.appearance.dropShadow", "narutooverlay.config.appearance.dropShadow.desc", DROP_SHADOW::get, value -> set(DROP_SHADOW, value))
-                            .toggle("narutooverlay.config.appearance.equalWidth", "narutooverlay.config.appearance.equalWidth.desc", EQUAL_WIDTH::get, value -> set(EQUAL_WIDTH, value))
-                            .toggle("narutooverlay.config.appearance.drawBackplane", "narutooverlay.config.appearance.drawBackplane.desc", DRAW_BACKPLANE::get, value -> set(DRAW_BACKPLANE, value))
-                            .toggle("narutooverlay.config.appearance.shimmer", "narutooverlay.config.appearance.shimmer.desc", SHIMMER::get, value -> {
-                                set(SHIMMER, value);
-                                MuiShimmer.refresh();
-                            });
-                    if (!RenderArgs.palette().hasAccent()) disableLastRow(section);
-                })
+                .section("narutooverlay.config.appearance.display", section -> section
+                        .toggle("narutooverlay.config.appearance.dropShadow", "narutooverlay.config.appearance.dropShadow.desc", DROP_SHADOW::get, value -> set(DROP_SHADOW, value))
+                        .toggle("narutooverlay.config.appearance.equalWidth", "narutooverlay.config.appearance.equalWidth.desc", EQUAL_WIDTH::get, value -> set(EQUAL_WIDTH, value))
+                        .toggle("narutooverlay.config.appearance.drawBackplane", "narutooverlay.config.appearance.drawBackplane.desc", DRAW_BACKPLANE::get, value -> set(DRAW_BACKPLANE, value))
+                        .toggle("narutooverlay.config.appearance.shimmer", "narutooverlay.config.appearance.shimmer.desc", SHIMMER::get, value -> {
+                            set(SHIMMER, value);
+                            MuiShimmer.refresh();
+                        })
+                        .enabledWhen(() -> palette().hasAccent())
+                )
                 .section("narutooverlay.config.appearance.shimmer", section -> {
                     section.slider("narutooverlay.config.appearance.shimmerSpeed", "narutooverlay.config.appearance.shimmerSpeed.desc", 0.2D, 3.0D, 0.1D, SHIMMER_SPEED::get, value -> set(SHIMMER_SPEED, value), value -> String.format(Locale.ROOT, "%.1f", value))
                             .slider("narutooverlay.config.appearance.shimmerDensity", "narutooverlay.config.appearance.shimmerDensity.desc", 0.2D, 3.0D, 0.1D, SHIMMER_SCALE::get, value -> set(SHIMMER_SCALE, value), value -> String.format(Locale.ROOT, "%.1f", value))
                             .slider("narutooverlay.config.appearance.shimmerStrength", "narutooverlay.config.appearance.shimmerStrength.desc", 0.0D, 1.0D, 0.1D, SHIMMER_STRENGTH::get, value -> set(SHIMMER_STRENGTH, value), value -> String.format(Locale.ROOT, "%.1f", value))
                             .slider("narutooverlay.config.appearance.shimmerFps", "narutooverlay.config.appearance.shimmerFps.desc", 5, 240, SHIMMER_FPS::get, value -> set(SHIMMER_FPS, value), Integer::toString)
                             .slider("narutooverlay.config.appearance.configShimmerFps", "narutooverlay.config.appearance.configShimmerFps.desc", 5, 120, CONFIG_SHIMMER_FPS::get, value -> set(CONFIG_SHIMMER_FPS, value), Integer::toString)
-                            .toggle("narutooverlay.config.appearance.cacheShimmer", "narutooverlay.config.appearance.cacheShimmer.desc", CACHE_SHIMMER::get, value -> set(CACHE_SHIMMER, value));
+                            .toggle("narutooverlay.config.appearance.cacheShimmer", "narutooverlay.config.appearance.cacheShimmer.desc", CACHE_SHIMMER::get, value -> set(CACHE_SHIMMER, value))
+                            .enabledWhenAll(() -> palette().hasAccent());
 
-                    if (!RenderArgs.palette().hasAccent()) {
-                        disableAllRows(section);
-                        section.note("narutooverlay.config.appearance.shimmer.unavailable");
-                    }
+                    if (!palette().hasAccent()) section.note("narutooverlay.config.appearance.shimmer.unavailable");
                 })
                 .section("narutooverlay.config.appearance.backplane", section -> section
                         .slider("narutooverlay.config.appearance.borderWidth", "narutooverlay.config.appearance.borderWidth.desc", 0.0D, 4.0D, 0.1D, BACKPLANE_BORDER_WIDTH::get, value -> set(BACKPLANE_BORDER_WIDTH, value), value -> String.format(Locale.ROOT, "%.1f", value))
                         .toggle("narutooverlay.config.appearance.borderOverride", "narutooverlay.config.appearance.borderOverride.desc", BACKPLANE_BORDER_OVERRIDE::get, value -> set(BACKPLANE_BORDER_OVERRIDE, value))
                         .customLayout(row -> {
-                            Context context = row.getContext();
-                            row.add(MuiColorField.create(context, MuiTheme.modern(context), "narutooverlay.config.appearance.borderColor", borderColor())
-                                    .buttonLabel("narutooverlay.config.appearance.pickColor")
-                                    .onPick(() -> {
-                                        Context pickerContext = HOST.requireContext();
-                                        MuiShimmerProfile.withCurrent(
-                                                NarutoShimmerConfig.PROFILE,
-                                                () -> withFactory(
-                                                        NarutoShimmerFactory.INSTANCE,
-                                                        () -> HOST.showOverlay(
-                                                                new MuiColorPickerOverlay(
-                                                                        pickerContext,
-                                                                        MuiTheme.modern(pickerContext).withPrimary(NarutoAccent.primary()),
-                                                                        borderColor(),
-                                                                        new MuiColorPickerOverlay.Labels(
-                                                                                "narutooverlay.config.color.title",
-                                                                                "narutooverlay.config.color.brightness",
-                                                                                "narutooverlay.config.color.alpha",
-                                                                                "narutooverlay.config.color.apply",
-                                                                                "narutooverlay.config.color.cancel"
-                                                                        ),
-                                                                        argb -> {
-                                                                            BACKPLANE_BORDER_OVERRIDE.set(true);
-                                                                            BACKPLANE_BORDER_RED.set((argb >> 16) & 0xFF);
-                                                                            BACKPLANE_BORDER_GREEN.set((argb >> 8) & 0xFF);
-                                                                            BACKPLANE_BORDER_BLUE.set(argb & 0xFF);
-                                                                            BACKPLANE_BORDER_ALPHA.set((argb >>> 24) & 0xFF);
-                                                                            ConfigSaver.changed();
-                                                                            HOST.reloadCurrentPage();
-                                                                        })
-                                                        )
-                                                )
-                                        );
-                                    }), fill());
+                            MuiColorField field = colorField(row, "narutooverlay.config.appearance.borderColor", borderColor());
+                            field.onPick(() -> pickBorderColor(host, field));
+                            row.add(field, fill());
                         })
                 )
                 .section("narutooverlay.config.appearance.performance", section -> section
@@ -338,7 +290,61 @@ public final class NarutoConfigScreen {
                         .number("narutooverlay.config.appearance.fpsWindow", "narutooverlay.config.appearance.fpsWindow.desc", 10, 1000, FPS_WINDOW::get, value -> set(FPS_WINDOW, value))
                 )
         ;
+    }
 
+    private static @NotNull MuiColorField colorField(@NotNull MuiLayout row, @NotNull String labelKey, int color) {
+        return MuiColorField.create(row.getContext(), row.theme(), labelKey, color)
+                .value(ThemeColors.format(color))
+                .buttonLabel("narutooverlay.config.appearance.pickColor");
+    }
+
+    private void pickCustomColor(@Nullable MuiScreenHost host, @NotNull MuiColorField field, boolean accent) {
+        if (host == null) return;
+
+        String titleKey = accent ? "narutooverlay.config.appearance.customAccent" : "narutooverlay.config.appearance.customBackplane";
+        host.colorPicker(accent ? customAccent() : customBackplane(), colorLabels(titleKey), argb -> {
+            int shown = accent ? ThemeColors.opaque(argb) : argb;
+
+            if (accent) {
+                CUSTOM_ACCENT.set(ThemeColors.toColorToken(shown));
+            } else {
+                CUSTOM_BACKPLANE.set(ThemeColors.toColorToken(shown));
+            }
+
+            field.color(shown);
+            field.value(ThemeColors.format(shown));
+            ConfigSaver.changed();
+
+            // The accent is part of the screen theme, so the rail and every control have to be
+            // resolved again; the other custom color only affects the HUD.
+            if (accent) host.onThemeChanged();
+        });
+    }
+
+    private void pickBorderColor(@Nullable MuiScreenHost host, @NotNull MuiColorField field) {
+        if (host == null) return;
+
+        host.colorPicker(borderColor(), colorLabels("narutooverlay.config.appearance.borderColor"), argb -> {
+            BACKPLANE_BORDER_OVERRIDE.set(true);
+            BACKPLANE_BORDER_RED.set((argb >> 16) & 0xFF);
+            BACKPLANE_BORDER_GREEN.set((argb >> 8) & 0xFF);
+            BACKPLANE_BORDER_BLUE.set(argb & 0xFF);
+            BACKPLANE_BORDER_ALPHA.set((argb >>> 24) & 0xFF);
+
+            field.color(argb);
+            field.value(ThemeColors.format(argb));
+            ConfigSaver.changed();
+        });
+    }
+
+    private static @NotNull MuiColorPickerOverlay.Labels colorLabels(@NotNull CharSequence title) {
+        return MuiColorPickerOverlay.Labels.builder()
+                .title(title)
+                .brightness("narutooverlay.config.color.brightness")
+                .alpha("narutooverlay.config.color.alpha")
+                .apply("narutooverlay.config.color.apply")
+                .cancel("narutooverlay.config.color.cancel")
+                .build();
     }
 
     private static @NotNull List<MuiOption<String>> themeChoices() {
@@ -371,63 +377,7 @@ public final class NarutoConfigScreen {
         return I18n.get(key);
     }
 
-    private static void pickCustomColor(boolean accent) {
-        String title = localized(accent
-                ? "narutooverlay.config.appearance.customAccent"
-                : "narutooverlay.config.appearance.customBackplane");
-        openColorPicker(title, accent ? customAccent() : customBackplane(), argb -> {
-            if (accent) {
-                CUSTOM_ACCENT.set(ThemeColors.toColorToken(ThemeColors.opaque(argb)));
-            } else {
-                CUSTOM_BACKPLANE.set(ThemeColors.toColorToken(argb));
-            }
-        });
-    }
-
-    private static void openColorPicker(@NotNull String title, int initial, @NotNull IntConsumer onPicked) {
-        Context context = HOST.requireContext();
-        MuiShimmerProfile.withCurrent(NarutoShimmerConfig.PROFILE, () ->
-                withFactory(NarutoShimmerFactory.INSTANCE, () ->
-                        HOST.showOverlay(new MuiColorPickerOverlay(
-                                context,
-                                MuiTheme.modern(context).withPrimary(NarutoAccent.primary()),
-                                initial,
-                                new MuiColorPickerOverlay.Labels(
-                                        title,
-                                        localized("narutooverlay.config.color.brightness"),
-                                        localized("narutooverlay.config.color.alpha"),
-                                        localized("narutooverlay.config.color.apply"),
-                                        localized("narutooverlay.config.color.cancel")),
-                                argb -> {
-                                    onPicked.accept(argb);
-                                    ConfigSaver.changed();
-                                    HOST.reloadCurrentPage();
-                                }))));
-    }
-
-    private static void disableLastRow(@NotNull MuiSettingsSection section) {
-        LinearLayout card = section.card();
-        if (card.getChildCount() == 0) return;
-        setEnabledRecursive(card.getChildAt(card.getChildCount() - 1), false);
-    }
-
-    private static void disableAllRows(@NotNull MuiSettingsSection section) {
-        LinearLayout card = section.card();
-        for (int i = 0; i < card.getChildCount(); i++) {
-            setEnabledRecursive(card.getChildAt(i), false);
-        }
-    }
-
-    private static void setEnabledRecursive(@NotNull View view, boolean enabled) {
-        view.setEnabled(enabled);
-        if (view instanceof ViewGroup group) {
-            for (int i = 0; i < group.getChildCount(); i++) {
-                setEnabledRecursive(group.getChildAt(i), enabled);
-            }
-        }
-    }
-
-    private static void buildAbout(@NotNull MuiSettingsPage page) {
+    private void buildAbout(@NotNull MuiSettingsPage page) {
         Path path = FMLPaths.CONFIGDIR.get().resolve("narutooverlay-client.toml");
 
         page.shimmerAll()
@@ -439,8 +389,8 @@ public final class NarutoConfigScreen {
                         .value("narutooverlay.config.about.environment", NarutoOverlay.ENV + " · " + SharedConstants.getCurrentVersion().getName() + " · " + I18n.get("narutooverlay.config.about.clientOnly"))
                 )
                 .section("narutooverlay.config.about.background", section -> {
-                    String folder = BACKGROUND.state().folder();
-                    int count = BACKGROUND.images().size();
+                    String folder = this.background.state().folder();
+                    int count = this.background.images().size();
 
                     section
                             .value("narutooverlay.config.background.folder", folder.isBlank() ? I18n.get("narutooverlay.config.background.folder.none") : folder)
@@ -449,8 +399,8 @@ public final class NarutoConfigScreen {
                                 Context context = row.getContext();
                                 MuiTheme theme = row.theme();
 
-                                Button choose = button(context, theme, "narutooverlay.config.background.folder.choose", true, view -> BACKGROUND.chooseBackgroundFolder());
-                                Button clear = button(context, theme, "narutooverlay.config.background.folder.clear", true, view -> BACKGROUND.clearBackgroundFolder());
+                                Button choose = button(context, theme, "narutooverlay.config.background.folder.choose", true, view -> this.background.chooseBackgroundFolder());
+                                Button clear = button(context, theme, "narutooverlay.config.background.folder.clear", true, view -> this.background.clearBackgroundFolder());
                                 clear.setEnabled(!folder.isBlank());
 
                                 row.add(
@@ -464,9 +414,9 @@ public final class NarutoConfigScreen {
                                 );
                             })
                             .value("narutooverlay.config.background.images", count == 0 ? I18n.get("narutooverlay.config.background.images.empty") : String.valueOf(count))
-                            .slider("narutooverlay.config.background.interval", "narutooverlay.config.background.interval.desc", 2.0D, 300.0D, 0.1D, BACKGROUND.state()::interval, BACKGROUND::setBackgroundInterval, value -> String.format(Locale.ROOT, "%.1f", value))
-                            .slider("narutooverlay.config.background.fade", "narutooverlay.config.background.fade.desc", 0.0D, 3.0D, 0.1D, () -> BACKGROUND.state().fade(), BACKGROUND::setBackgroundFade, value -> String.format(Locale.ROOT, "%.1f", value))
-                            .slider("narutooverlay.config.background.dim", "narutooverlay.config.background.dim.desc", 0.0D, 1.0D, 0.1D, () -> BACKGROUND.state().dim(), BACKGROUND::setBackgroundDim, value -> String.format(Locale.ROOT, "%.1f", value));
+                            .slider("narutooverlay.config.background.interval", "narutooverlay.config.background.interval.desc", 2.0D, 300.0D, 0.1D, this.background.state()::interval, this.background::setBackgroundInterval, value -> String.format(Locale.ROOT, "%.1f", value))
+                            .slider("narutooverlay.config.background.fade", "narutooverlay.config.background.fade.desc", 0.0D, 3.0D, 0.1D, () -> this.background.state().fade(), this.background::setBackgroundFade, value -> String.format(Locale.ROOT, "%.1f", value))
+                            .slider("narutooverlay.config.background.dim", "narutooverlay.config.background.dim.desc", 0.0D, 1.0D, 0.1D, () -> this.background.state().dim(), this.background::setBackgroundDim, value -> String.format(Locale.ROOT, "%.1f", value));
                 })
                 .section("narutooverlay.config.about.config", section -> section
                         .value("narutooverlay.config.about.path", path.toString())
@@ -546,6 +496,24 @@ public final class NarutoConfigScreen {
         minecraft.setScreen(build(minecraft.screen));
     }
 
+    private static @NotNull MuiBackgroundLabels backgroundLabels() {
+        return MuiBackgroundLabels.builder()
+                .pickerTitle("narutooverlay.config.background.picker")
+                .imageFilter("narutooverlay.config.background.filter")
+                .pickerFailed("narutooverlay.config.background.pickerFailed")
+                .folderPickerTitle("narutooverlay.config.background.folder.picker")
+                .folderPickerFailed("narutooverlay.config.background.folder.failed")
+                .failed("narutooverlay.config.background.failed")
+                .saved("narutooverlay.config.background.saved")
+                .crop(MuiCropOverlay.Labels.builder()
+                        .title("narutooverlay.config.background.crop.title")
+                        .hint("narutooverlay.config.background.crop.hint")
+                        .confirm("narutooverlay.config.background.confirm")
+                        .cancel("narutooverlay.config.background.cancel")
+                        .build())
+                .build();
+    }
+
     static final class NarutoBackgroundSettings implements MuiBackgroundSettings {
         @Override
         public @NotNull MuiBackgroundState load() {
@@ -588,59 +556,7 @@ public final class NarutoConfigScreen {
         }
     }
 
-    static final class NarutoCropFactory implements MuiCropOverlayFactory {
-        @Override
-        public @NotNull MuiCropOverlay create(@NotNull Context context, @NotNull Image image, int imageWidth, int imageHeight, float targetAspect, MuiCropOverlay.@NotNull Labels labels, MuiCropOverlay.@NotNull Listener listener) {
-            Supplier<MuiCropOverlay> overlay = () -> new MuiCropOverlay(context, MuiTheme.modern(context).withPrimary(NarutoAccent.primary()), image, imageWidth, imageHeight, targetAspect, labels, listener);
-            return MuiShimmerProfile.withCurrent(NarutoShimmerConfig.PROFILE, () -> withFactory(NarutoShimmerFactory.INSTANCE, overlay));
-        }
-    }
-
-    static class NarutoScreenHost implements MuiScreenHost {
-        private @Nullable MuiConfigFragment fragment;
-
-        public void attach(@Nullable MuiConfigFragment fragment) {
-            this.fragment = fragment;
-        }
-
-        @Override
-        public @NotNull Context requireContext() {
-            MuiConfigFragment current = this.fragment;
-            if (current == null) throw new IllegalStateException("Config screen is not attached");
-            return current.requireContext();
-        }
-
-        @Override
-        public void showOverlay(@NotNull View overlay) {
-            MuiConfigFragment current = this.fragment;
-            if (current != null) current.showOverlay(overlay);
-        }
-
-        @Override
-        public void removeOverlay(@NotNull View overlay) {
-            MuiConfigFragment current = this.fragment;
-            if (current != null) current.removeOverlay(overlay);
-        }
-
-        @Override
-        public void reloadCurrentPage() {
-            MuiConfigFragment current = this.fragment;
-            if (current != null) current.reloadCurrentPage();
-        }
-
-        @Override
-        public void onThemeChanged() {
-            MuiConfigFragment current = this.fragment;
-            if (current != null) {
-                current.reloadTheme();
-            }
-            ConfigSaver.changed();
-        }
-    }
-
-    static class NarutoShimmerConfig implements MuiShimmerConfig {
-        public static final MuiShimmerProfile PROFILE = MuiShimmerProfile.create(new NarutoShimmerConfig());
-
+    static final class NarutoShimmerConfig implements MuiShimmerConfig {
         @Override
         public boolean enabled() {
             return SHIMMER.get();
@@ -674,95 +590,6 @@ public final class NarutoConfigScreen {
         @Override
         public int @NotNull [] ramp() {
             return HudSchemes.shimmerRamp(THEME.get(), palette());
-        }
-    }
-
-    static class NarutoShimmerFactory implements MuiWidgetFactory {
-        public static final MuiWidgetFactory SHIMMER = MuiWidgetFactory.shimmer();
-        public static final NarutoShimmerFactory INSTANCE = new NarutoShimmerFactory();
-
-        @Override
-        public @NotNull TextView text(@NotNull Context context, @NotNull CharSequence text, float size, int color) {
-            return SHIMMER.text(context, text, size, color);
-        }
-
-        @Override
-        public @NotNull TextView text(@NotNull Context context, @NotNull CharSequence text, float size, int color, @NotNull MuiShimmerable marker) {
-            return SHIMMER.text(context, text, size, color, marker);
-        }
-
-        @Override
-        public @NotNull Switch switchControl(@NotNull Context context, @NotNull MuiTheme theme) {
-            return SHIMMER.switchControl(context, naruto(theme));
-        }
-
-        @Override
-        public @NotNull Switch switchControl(@NotNull Context context, @NotNull MuiTheme theme, @NotNull MuiShimmerable marker) {
-            return SHIMMER.switchControl(context, naruto(theme), marker);
-        }
-
-        @Override
-        public @NotNull SeekBar slider(@NotNull Context context, @NotNull MuiTheme theme, int max, int progress) {
-            return SHIMMER.slider(context, naruto(theme), max, progress);
-        }
-
-        @Override
-        public @NotNull SeekBar slider(@NotNull Context context, @NotNull MuiTheme theme, int max, int progress, @NotNull MuiShimmerable marker) {
-            return SHIMMER.slider(context, naruto(theme), max, progress, marker);
-        }
-
-        @Override
-        public @NotNull Button button(@NotNull Context context, @NotNull MuiTheme theme, @NotNull CharSequence label, boolean outlined, View.@NotNull OnClickListener onClick) {
-            return SHIMMER.button(context, naruto(theme), label, outlined, onClick);
-        }
-
-        @Override
-        public @NotNull Button button(@NotNull Context context, @NotNull MuiTheme theme, @NotNull CharSequence label, boolean outlined, View.@NotNull OnClickListener onClick, @NotNull MuiShimmerable marker) {
-            return SHIMMER.button(context, naruto(theme), label, outlined, onClick, marker);
-        }
-
-        @Override
-        public @NotNull CheckBox checkBox(@NotNull Context context, @NotNull MuiTheme theme, @NotNull MuiShimmerable marker) {
-            return SHIMMER.checkBox(context, naruto(theme), marker);
-        }
-
-        @Override
-        public @NotNull RadioButton radioButton(@NotNull Context context, @NotNull MuiTheme theme, @NotNull MuiShimmerable marker) {
-            return SHIMMER.radioButton(context, naruto(theme), marker);
-        }
-
-        @Override
-        public @NotNull ProgressBar progressBar(@NotNull Context context, @NotNull MuiTheme theme, @NotNull MuiShimmerable marker) {
-            return SHIMMER.progressBar(context, naruto(theme), marker);
-        }
-
-        @Override
-        public @NotNull MuiTextField textField(@NotNull Context context, @NotNull MuiTheme theme, @NotNull CharSequence text) {
-            return SHIMMER.textField(context, naruto(theme), text);
-        }
-
-        @Override
-        public @NotNull MuiNumberField numberField(@NotNull Context context, @NotNull MuiTheme theme, long value) {
-            return SHIMMER.numberField(context, naruto(theme), value);
-        }
-
-        @Override
-        public @NotNull <T> MuiDropdown<T> dropdown(@NotNull Context context, @NotNull MuiTheme theme, @NotNull List<MuiOption<T>> muiOptions) {
-            return SHIMMER.dropdown(context, naruto(theme), muiOptions);
-        }
-
-        @Override
-        public @NotNull <T> MuiChoiceGrid<T> choiceGrid(@NotNull Context context, @NotNull MuiTheme theme, @NotNull List<MuiOption<T>> muiOptions) {
-            return SHIMMER.choiceGrid(context, naruto(theme), muiOptions);
-        }
-
-        @Override
-        public @NotNull MuiListEditor listEditor(@NotNull Context context, @NotNull MuiTheme theme, @NotNull List<String> values) {
-            return SHIMMER.listEditor(context, naruto(theme), values);
-        }
-
-        private static @NotNull MuiTheme naruto(@NotNull MuiTheme theme) {
-            return theme.withPrimary(NarutoAccent.primary()).withOnPrimary(NarutoAccent.onPrimary());
         }
     }
 

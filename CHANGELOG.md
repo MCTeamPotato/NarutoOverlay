@@ -41,3 +41,10 @@
 - Fix the built-in Naruto palette: five of its colors were missing the alpha byte, which made the overlay label and value colors fully transparent when NarutoUI is not installed.
 - Build the Naruto shimmer ramp from the HUD status colors ordered bright to deep, the same rule NarutoUI 1.9.0 uses, so the wave matches with or without NarutoUI.
 - Update the NarutoUI artifact to 1.9.0.
+# 1.7.0
+- Rebuild the config screen from NarutoUI 1.10.0: overlays inherit the screen theme, shimmer profile and widget factory, so the 88-line shimmer factory and the manual profile/factory stack pushes are gone.
+- Rebuild only the card that changed after a reset instead of reloading the page; the page keeps its scroll position and the other cards stay expanded.
+- Drive the Cards page from `MuiSettingsPage#collapsibleCard(...)` and `MuiSettingsSection#addRow(...)`, so it shares the section dividers and spacing of the Appearance page instead of hand-built layout params.
+- Make the config screen instance-based: each open screen owns its background controller and shimmer profile, so the chat shortcut and the mod list no longer share one static host.
+- Use `MuiColorField#value(...)` for the current color text, and update the swatch in place after a pick instead of rebuilding the page.
+- Replace the hand-written background and crop labels with the new label builders.
